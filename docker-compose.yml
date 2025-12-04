@@ -1,13 +1,49 @@
 version: '3.8'
 services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=false"
+      - "--log.level=INFO"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=youremail@example.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+
   frontend:
     build:
       context: .
       args:
         VITE_API_URL: "${VITE_API_URL}"
         VITE_WHATSAPP_API_URL: "${VITE_WHATSAPP_API_URL}"
-    ports:
-      - "80:80"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`zeatextile.cloud`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.http-to-https.rule=Host(`zeatextile.cloud`)"
+      - "traefik.http.routers.http-to-https.entrypoints=web"
+      - "traefik.http.routers.http-to-https.middlewares=redirect-to-https"
+    networks:
+      - web
+networks:
+  web:
+    external: false
