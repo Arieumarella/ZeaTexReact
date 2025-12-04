@@ -4,6 +4,7 @@ import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getWhatsAppStatus, getWhatsAppQR } from "../../service/whatsappService";
 
 export default function Wa() {
   const [ready, setReady] = useState<boolean | null>(null);
@@ -14,33 +15,14 @@ export default function Wa() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch("http://localhost:5000/status");
-      const data = await res.json();
-      if (!res.ok) {
-        // server provided an error message
-        if (data?.message) toast.error(data.message);
-        else toast.error('Gagal mengambil status WhatsApp');
-        setReady(null);
-        setLastChecked(Date.now());
-        return;
-      }
-      // server returns { ready: boolean }
-      if (typeof data?.ready === 'boolean') {
-        setReady(Boolean(data.ready));
-        setLastChecked(Date.now());
-        // keep any existing QR visible even when status becomes ready
-        // (previous behavior cleared the QR here: `if (data.ready) setQr(null);`)
-      } else {
-        // unexpected payload
-        if (data?.message) toast.error(data.message);
-        else toast.error('Response status tidak valid');
-        setReady(null);
-        setLastChecked(Date.now());
-      }
+      const data = await getWhatsAppStatus();
+      setReady(Boolean(data.ready));
+      setLastChecked(Date.now());
     } catch (err) {
       setReady(null);
+      setLastChecked(Date.now());
       console.error("Error fetching WA status:", err);
-      toast.error('Gagal menghubungi server status WhatsApp');
+      toast.error(err instanceof Error ? err.message : 'Gagal menghubungi server status WhatsApp');
     }
   };
 
@@ -57,26 +39,16 @@ export default function Wa() {
   const handleGenerateQr = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/qr");
-      const data = await res.json();
-      if (!res.ok) {
-        if (data?.message) toast.error(data.message);
-        else toast.error('Gagal mengambil QR dari server');
-        setQr(null);
-        return;
-      }
+      const data = await getWhatsAppQR();
       // server returns { qr: "data:image/png;base64,..." } or just base64
-      if (typeof data?.qr === "string") {
-        if (data.qr.startsWith("data:")) setQr(data.qr);
-        else setQr(`data:image/png;base64,${data.qr}`);
+      if (data.qr.startsWith("data:")) {
+        setQr(data.qr);
       } else {
-        if (data?.message) toast.error(data.message);
-        else toast.error('QR tidak tersedia');
-        setQr(null);
+        setQr(`data:image/png;base64,${data.qr}`);
       }
     } catch (err) {
       console.error("Error fetching QR:", err);
-      toast.error('Gagal menghubungi server QR');
+      toast.error(err instanceof Error ? err.message : 'Gagal menghubungi server QR');
       setQr(null);
     } finally {
       setLoading(false);
@@ -89,8 +61,8 @@ export default function Wa() {
   const statusColor = ready === null
     ? "text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-white/[0.03]"
     : ready
-    ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/20"
-    : "text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/20";
+      ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/20"
+      : "text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/20";
 
   return (
     <>
