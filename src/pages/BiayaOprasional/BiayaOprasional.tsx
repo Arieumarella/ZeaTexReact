@@ -1,0 +1,199 @@
+import React, { useState } from "react";
+import { useEffect } from "react";
+import { getOprasional, deleteOprasional, Oprasional } from '../../service/oprasionalServices';
+import { ToastContainer } from 'react-toastify';
+import Swal from 'sweetalert2';
+import 'react-toastify/dist/ReactToastify.css';
+import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import ComponentCard from "../../components/common/ComponentCard";
+import PageMeta from "../../components/common/PageMeta";
+import { useNavigate } from "react-router-dom";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "../../components/ui/table";
+
+export default function BiayaOprasional() {
+  const navigate = useNavigate();
+  const [data, setData] = useState<Oprasional[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [tanggalStart, setTanggalStart] = useState("");
+  const [tanggalEnd, setTanggalEnd] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+  // Filter tanggal rentang
+  useEffect(() => {
+    setLoading(true);
+    getOprasional(page, search).then(res => {
+      if (res && res.status && res.data) {
+        let filtered = res.data;
+        // Filter tanggal
+        if (tanggalStart || tanggalEnd) {
+          filtered = filtered.filter(item => {
+            const tgl = item.created_at.slice(0, 10);
+            if (tanggalStart && tanggalEnd) {
+              return tgl >= tanggalStart && tgl <= tanggalEnd;
+            } else if (tanggalStart) {
+              return tgl >= tanggalStart;
+            } else if (tanggalEnd) {
+              return tgl <= tanggalEnd;
+            }
+            return true;
+          });
+        }
+        setData(filtered);
+        setTotalPages(res.totalPages || 1);
+      } else {
+        setData([]);
+        setTotalPages(1);
+      }
+      setLoading(false);
+    });
+  }, [page, search, tanggalStart, tanggalEnd]);
+
+  // Hapus handler
+  const handleDelete = async (id: number) => {
+    Swal.fire({
+      title: 'Yakin ingin menghapus data oprasional?',
+      text: 'Data yang dihapus tidak dapat dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const res = await deleteOprasional(id);
+        if (res.status) {
+          // Refresh data
+          setLoading(true);
+          getOprasional(page).then(res => {
+            if (res && res.status && res.data) {
+              setData(res.data);
+              setTotalPages(res.totalPages || 1);
+            } else {
+              setData([]);
+              setTotalPages(1);
+            }
+            setLoading(false);
+          });
+        }
+      }
+    });
+  };
+
+  return (
+    <>
+      <PageMeta
+        title="Biaya Oprasional"
+        description="Tabel biaya oprasional di Zea. Textile"
+      />
+      <PageBreadcrumb pageTitle="Biaya Oprasional" />
+      <div className="space-y-6">
+        <ComponentCard title="Daftar Biaya Oprasional">
+          <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
+            <input
+              type="text"
+              placeholder="Cari nama biaya..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="border rounded px-3 py-2 w-full md:w-64 dark:bg-gray-900 dark:text-white/90"
+            />
+            <button
+              type="button"
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              onClick={() => navigate('/tambah-biaya')}
+            >
+              + Tambah Biaya
+            </button>
+          </div>
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="date"
+              value={tanggalStart}
+              onChange={e => setTanggalStart(e.target.value)}
+              className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
+              placeholder="Tanggal Awal"
+            />
+            <span className="text-gray-500 dark:text-gray-400">s/d</span>
+            <input
+              type="date"
+              value={tanggalEnd}
+              onChange={e => setTanggalEnd(e.target.value)}
+              className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
+              placeholder="Tanggal Akhir"
+            />
+           
+          </div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+            <div className="max-w-full overflow-x-auto">
+              <Table>
+                <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
+                  <TableRow>
+                    <TableCell isHeader className="w-12 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">No</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nama Biaya</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Jumlah Uang</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Tanggal Input</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Penginput</TableCell>
+                    <TableCell isHeader className="w-48 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                  {loading ? (
+                    <TableRow>
+                      <TableCell className="text-center py-4">
+                        <td colSpan={5} className="text-center py-4 dark:text-gray-400">Loading...</td>
+                      </TableCell>
+                    </TableRow>
+                  ) : data.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="text-center py-4">
+                        <td colSpan={5} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((item, idx) => (
+                      <TableRow key={item.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
+                        <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * rowsPerPage + idx + 1}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.nama_baya}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">Rp {Number(item.jml_biaya).toLocaleString()}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.created_at.slice(0,10)}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.penginput?.username || item.username || (item.user && item.user.username) || '-'}</TableCell>
+                        <TableCell className="w-48 px-2 py-2 border text-center">
+                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600"  onClick={() => navigate(`/edit-biaya/${item.id}`)}>Edit</button>
+                          <button className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600" onClick={() => handleDelete(item.id)}>Hapus</button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-end items-center gap-2 w-full">
+              <span className="dark:bg-gray-900 dark:text-white/90">Halaman:</span>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  className={`px-3 py-1 border rounded ${page === i + 1 ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+                  onClick={() => setPage(i + 1)}
+                  disabled={page === i + 1}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />
+        </ComponentCard>
+      </div>
+    </>
+  );
+}
