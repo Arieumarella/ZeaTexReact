@@ -1,0 +1,7 @@
+# Placeholder for SSL Certificate
+# Setelah verifikasi domain selesai, Sectigo akan memberikan certificate file.
+# Ganti isi file ini dengan certificate yang Anda terima dari Sectigo.
+# Format certificate harus dimulai dengan:
+# -----BEGIN CERTIFICATE-----
+# dan diakhiri dengan:
+# -----END CERTIFICATE-----
