@@ -55,6 +55,11 @@ Langkah-langkah:
 
 - Jika sertifikat berhasil diperoleh, Traefik akan menulis ke `letsencrypt/acme.json` dan Anda akan melihat pesan sukses pada log.
 
+  Catatan jika Traefik tidak mendeteksi container (404 page not found):
+  - Pastikan Traefik dapat membaca Docker socket. Jika Traefik menunjukkan error terkait Docker API version, kita bisa set `DOCKER_API_VERSION` pada service Traefik atau upgrade Docker Engine.
+  - Dalam konfigurasi repository ini saya sudah menambahkan `DOCKER_API_VERSION=1.52` dan label eksplisit `traefik.http.services.frontend.loadbalancer.server.port=80` pada `docker-compose.yml`.
+  - Untuk debugging sementara, Traefik dashboard tersedia di port `8080` pada VPS (`http://<vps-ip>:8080`). Matikan dashboard setelah selesai debugging jika tidak perlu.
+
 7) Verifikasi di browser
 - Buka https://zeatextile.cloud/ — harusnya sekarang menggunakan HTTPS.
 
