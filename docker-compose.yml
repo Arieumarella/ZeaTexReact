@@ -1,56 +1,14 @@
 version: '3.8'
 services:
-  traefik:
-    image: traefik:v3.2
-    container_name: traefik
-    restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.52
-    command:
-      - "--api.insecure=true"
-      - "--api.dashboard=true"
-      - "--log.level=DEBUG"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=youremail@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./letsencrypt:/letsencrypt"
-    networks:
-      - web
-
   frontend:
     build:
       context: .
       args:
         VITE_API_URL: "${VITE_API_URL}"
         VITE_WHATSAPP_API_URL: "${VITE_WHATSAPP_API_URL}"
+    ports:
+      - "80:80"
+      - "443:443"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=zeatexreact_web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend-http.rule=Host(`zeatextile.cloud`)"
-      - "traefik.http.routers.frontend-http.entrypoints=web"
-      - "traefik.http.routers.frontend-http.middlewares=redirect-to-https"
-      - "traefik.http.routers.frontend-https.rule=Host(`zeatextile.cloud`)"
-      - "traefik.http.routers.frontend-https.entrypoints=websecure"
-      - "traefik.http.routers.frontend-https.tls.certresolver=myresolver"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-    networks:
-      - web
-networks:
-  web:
-    external: false
