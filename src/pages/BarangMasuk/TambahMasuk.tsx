@@ -152,100 +152,100 @@ export default function TambahMasuk() {
           <form className="space-y-8" onSubmit={handleSubmit}>
             {/* Bagian Atas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6">
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal Transaksi</label>
-                  <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required />
-                </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal Transaksi</label>
+                <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required />
+              </div>
 
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Suplier</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Cari atau pilih supplier..."
-                      value={selectedSupplierName || supplierQuery}
-                      onChange={e => { setSupplierQuery(e.target.value); setSelectedSupplierName(''); setShowSupplierDropdown(true); }}
-                      onFocus={() => setShowSupplierDropdown(true)}
-                      className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 placeholder-gray-500 dark:placeholder-gray-400"
-                      required
-                    />
-                    {showSupplierDropdown && (
-                      <ul className="absolute z-50 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm dark:shadow-md">
-                        {suppliers.filter(s => s.nama.toLowerCase().includes((supplierQuery || selectedSupplierName).toLowerCase())).map(s => (
-                          <li
-                            key={s.id}
-                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
-                            onMouseDown={() => { setSuplier(String(s.id)); setSelectedSupplierName(s.nama); setSupplierQuery(''); setShowSupplierDropdown(false); }}
-                          >
-                            <span className="truncate">{s.nama}</span>
-                            <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{s.no_tlp}</span>
-                          </li>
-                        ))}
-                        {suppliers.length === 0 && <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Tidak ada supplier</li>}
-                      </ul>
-                    )}
-                  </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Suplier</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Cari atau pilih supplier..."
+                    value={selectedSupplierName || supplierQuery}
+                    onChange={e => { setSupplierQuery(e.target.value); setSelectedSupplierName(''); setShowSupplierDropdown(true); }}
+                    onFocus={() => setShowSupplierDropdown(true)}
+                    className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 placeholder-gray-500 dark:placeholder-gray-400"
+                    required
+                  />
+                  {showSupplierDropdown && (
+                    <ul className="absolute z-50 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm dark:shadow-md">
+                      {suppliers.filter(s => s.nama.toLowerCase().includes((supplierQuery || selectedSupplierName).toLowerCase())).map(s => (
+                        <li
+                          key={s.id}
+                          className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
+                          onMouseDown={() => { setSuplier(String(s.id)); setSelectedSupplierName(s.nama); setSupplierQuery(''); setShowSupplierDropdown(false); }}
+                        >
+                          <span className="truncate">{s.nama}</span>
+                          <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{s.no_tlp}</span>
+                        </li>
+                      ))}
+                      {suppliers.length === 0 && <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Tidak ada supplier</li>}
+                    </ul>
+                  )}
                 </div>
+              </div>
 
-                {/* Status Pembayaran */}
+              {/* Status Pembayaran */}
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Status Pembayaran</label>
+                <select
+                  className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90"
+                  value={statusPembayaran}
+                  onChange={e => setStatusPembayaran(e.target.value)}
+                  required
+                >
+                  <option value="0">Lunas</option>
+                  <option value="1">Berjangka</option>
+                </select>
+              </div>
+
+              {/* Tenor, shown only if Berjangka */}
+              {statusPembayaran === "1" && (
                 <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Status Pembayaran</label>
+                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tenor (Jumlah Cicilan)</label>
                   <select
                     className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90"
-                    value={statusPembayaran}
-                    onChange={e => setStatusPembayaran(e.target.value)}
-                    required
+                    value={tenor}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setTenor(val);
+                      setTanggalTenor(Array(val).fill(""));
+                    }}
                   >
-                    <option value="0">Lunas</option>
-                    <option value="1">Berjangka</option>
+                    {[...Array(12)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                    ))}
                   </select>
                 </div>
+              )}
 
-                {/* Tenor, shown only if Berjangka */}
-                {statusPembayaran === "1" && (
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tenor (Jumlah Cicilan)</label>
-                    <select
-                      className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90"
-                      value={tenor}
-                      onChange={e => {
-                        const val = Number(e.target.value);
-                        setTenor(val);
-                        setTanggalTenor(Array(val).fill(""));
-                      }}
-                    >
-                      {[...Array(12)].map((_, i) => (
-                        <option key={i+1} value={i+1}>{i+1}x</option>
-                      ))}
-                    </select>
+              {/* Tanggal Tenor, shown only if Berjangka */}
+              {statusPembayaran === "1" && tenor > 0 && (
+                <div className="col-span-2">
+                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal Pembayaran per Tenor</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {tanggalTenor.map((tgl, idx) => (
+                      <div key={idx}>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Angsuran {idx + 1}</span>
+                        <input
+                          type="date"
+                          value={tgl}
+                          onChange={e => {
+                            const arr = [...tanggalTenor];
+                            arr[idx] = e.target.value;
+                            setTanggalTenor(arr);
+                          }}
+                          className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90"
+                          required
+                        />
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Tanggal Tenor, shown only if Berjangka */}
-                {statusPembayaran === "1" && tenor > 0 && (
-                  <div className="col-span-2">
-                    <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal Pembayaran per Tenor</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {tanggalTenor.map((tgl, idx) => (
-                        <div key={idx}>
-                          <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Angsuran {idx + 1}</span>
-                          <input
-                            type="date"
-                            value={tgl}
-                            onChange={e => {
-                              const arr = [...tanggalTenor];
-                              arr[idx] = e.target.value;
-                              setTanggalTenor(arr);
-                            }}
-                            className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90"
-                            required
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mb-6">
@@ -277,7 +277,10 @@ export default function TambahMasuk() {
                         />
                         {activeBarangDropdownIndex === idx && (
                           <ul className="absolute z-40 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm">
-                            {allBarang.filter(b => b.nama_barang.toLowerCase().includes((barang.namaBarang || '').toLowerCase())).map(b => (
+                            {allBarang.filter(b => {
+                              const q = (barang.namaBarang || '').toLowerCase();
+                              return b.nama_barang.toLowerCase().includes(q) || b.kd_barang.toLowerCase().includes(q);
+                            }).map(b => (
                               <li key={b.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
                                 onMouseDown={() => {
                                   const newList = [...barangList];
@@ -434,7 +437,7 @@ export default function TambahMasuk() {
               <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">{loading ? 'Menyimpan...' : 'Simpan'}</button>
             </div>
           </form>
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />
+          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />
         </ComponentCard>
       </div>
     </>

@@ -203,7 +203,7 @@ export default function TambahKeluar() {
                     }}
                   >
                     {[...Array(12)].map((_, i) => (
-                      <option key={i+1} value={i+1}>{i+1}x</option>
+                      <option key={i + 1} value={i + 1}>{i + 1}x</option>
                     ))}
                   </select>
                 </div>
@@ -258,7 +258,10 @@ export default function TambahKeluar() {
                         />
                         {activeBarangDropdownIndex === idx && (
                           <ul className="absolute z-40 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm">
-                            {allBarang.filter(b => b.nama_barang.toLowerCase().includes((barang.namaBarang || '').toLowerCase())).map(b => (
+                            {allBarang.filter(b => {
+                              const q = (barang.namaBarang || '').toLowerCase();
+                              return b.nama_barang.toLowerCase().includes(q) || b.kd_barang.toLowerCase().includes(q);
+                            }).map(b => (
                               <li key={b.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
                                 onMouseDown={() => {
                                   const newList = [...barangList];

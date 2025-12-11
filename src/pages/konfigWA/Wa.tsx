@@ -30,10 +30,10 @@ export default function Wa() {
     // initial fetch
     fetchStatus();
     // poll every 3 seconds
-    intervalRef.current = window.setInterval(fetchStatus, 3000) as unknown as number;
-    return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-    };
+    // intervalRef.current = window.setInterval(fetchStatus, 3000) as unknown as number;
+    // return () => {
+    //   if (intervalRef.current) window.clearInterval(intervalRef.current);
+    // };
   }, []);
 
   const handleGenerateQr = async () => {

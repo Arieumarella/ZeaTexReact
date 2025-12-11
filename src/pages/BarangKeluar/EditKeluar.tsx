@@ -83,7 +83,7 @@ export default function EditKeluar() {
             if (trans.status_pembayaran === '1' && trans.berjangka && trans.berjangka.length > 0) {
               setBerjangkaData(trans.berjangka);
               setTanggalTenor(trans.berjangka.map((b: any) => b.tgl_jatuh_tempo.split('T')[0]));
-              
+
               // Hitung berapa tenor sudah ada pembayaran (jml_bayar > 0)
               const tenorDenganPembayaran = trans.berjangka.filter((b: any) => b.jml_bayar > 0).length;
               setMinTenor(tenorDenganPembayaran);
@@ -154,7 +154,7 @@ export default function EditKeluar() {
       console.log('UPDATE payload:', JSON.stringify(payload, null, 2));
 
       const result = await updateTransaksiKeluar(parseInt(id!), payload);
-      
+
       if (!result || !result.status) {
         toast.error(result?.message || 'Gagal memperbarui data.');
         return;
@@ -238,7 +238,7 @@ export default function EditKeluar() {
                         <li
                           key={c.id}
                           className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
-                      onMouseDown={() => { setCustomer(String(c.id)); setSelectedCustomerName(c.nama); setCustomerQuery(''); setShowCustomerDropdown(false); }}
+                          onMouseDown={() => { setCustomer(String(c.id)); setSelectedCustomerName(c.nama); setCustomerQuery(''); setShowCustomerDropdown(false); }}
                         >
                           <span className="truncate">{c.nama}</span>
                           <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{c.no_tlp}</span>
@@ -311,7 +311,7 @@ export default function EditKeluar() {
                     {tanggalTenor.map((tgl, idx) => {
                       const berjangkaItem = berjangkaData[idx];
                       const isSudahBayar = berjangkaItem && berjangkaItem.jml_bayar > 0;
-                      
+
                       return (
                         <div key={idx}>
                           <div className="flex items-center justify-between mb-1">
@@ -333,9 +333,8 @@ export default function EditKeluar() {
                               setTanggalTenor(arr);
                             }}
                             disabled={isSudahBayar}
-                            className={`border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 ${
-                              isSudahBayar ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''
-                            }`}
+                            className={`border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 ${isSudahBayar ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''
+                              }`}
                             required
                           />
                         </div>
@@ -374,7 +373,10 @@ export default function EditKeluar() {
                         />
                         {activeBarangDropdownIndex === idx && (
                           <ul className="absolute z-40 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm">
-                            {allBarang.filter(b => b.nama_barang.toLowerCase().includes((barang.namaBarang || '').toLowerCase())).map(b => (
+                            {allBarang.filter(b => {
+                              const q = (barang.namaBarang || '').toLowerCase();
+                              return b.nama_barang.toLowerCase().includes(q) || b.kd_barang.toLowerCase().includes(q);
+                            }).map(b => (
                               <li key={b.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
                                 onMouseDown={() => {
                                   const newList = [...barangList];
