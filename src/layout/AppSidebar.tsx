@@ -3,18 +3,13 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
-  UserCircleIcon,
+  ListIcon
 } from "../icons";
+import { FontAwesomeIcon } from "../icons";
+import { faArrowTrendDown, faBoxesStacked, faArrowTrendUp, faMoneyCheckDollar, faAddressCard, faGears } from '@fortawesome/free-solid-svg-icons';
 import { useSidebar } from "../context/SidebarContext";
 
 
@@ -33,13 +28,13 @@ const navItems: NavItem[] = [
     path: "/Home",
   },
   {
-    icon: <CalenderIcon />,
+    icon: <FontAwesomeIcon icon={faBoxesStacked} />,
     name: "Stok Barang",
     path: "/stok-barang",
     relatedPaths: ["/tambah-stok", "/edit-stok"],
   },
   {
-    icon: <PageIcon />,
+    icon: <FontAwesomeIcon icon={faArrowTrendDown} />,
     name: "Barang Masuk",
     path: "/barang-masuk",
     relatedPaths: ["/tambah-masuk", "/edit-masuk", "/detail-masuk", "/input-cicilan", "/retur-masuk"],
@@ -47,32 +42,33 @@ const navItems: NavItem[] = [
 
 
   {
-    icon: <PageIcon />,
+    icon: <FontAwesomeIcon icon={faArrowTrendUp} />,
     name: "Barang Keluar",
     path: "/barang-keluar",
     relatedPaths: ["/tambah-keluar", "/edit-keluar", "/detail-keluar", "/input-cicilan-keluar", "/retur-keluar"],
   },
 
   {
-    icon: <CalenderIcon />,
+    icon: <FontAwesomeIcon icon={faMoneyCheckDollar} />,
     name: "Biaya Operasional",
     path: "/biaya-operasional",
     relatedPaths: ["/tambah-biaya", "/edit-biaya"],
   },
 
   {
-    icon: <CalenderIcon />,
+    icon: <FontAwesomeIcon icon={faAddressCard} />,
     name: "Profile Toko",
     path: "/profile",
     relatedPaths: ["/profile"],
   },
 
   {
-    icon: <CalenderIcon />,
+    icon: <FontAwesomeIcon icon={faGears} />,
     name: "Konfigurasi WhatsApp",
     path: "/konfigurasi-whatsapp",
     relatedPaths: ["/konfigurasi-whatsapp"],
   },
+
 
   {
     name: "Assets Management",
