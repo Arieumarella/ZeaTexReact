@@ -38,8 +38,8 @@ const navItems: NavItem[] = [
     path: "/stok-barang",
     relatedPaths: ["/tambah-stok", "/edit-stok"],
   },
-   {
-    icon: <CalenderIcon />,
+  {
+    icon: <PageIcon />,
     name: "Barang Masuk",
     path: "/barang-masuk",
     relatedPaths: ["/tambah-masuk", "/edit-masuk", "/detail-masuk", "/input-cicilan", "/retur-masuk"],
@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
 
 
   {
-    icon: <CalenderIcon />,
+    icon: <PageIcon />,
     name: "Barang Keluar",
     path: "/barang-keluar",
     relatedPaths: ["/tambah-keluar", "/edit-keluar", "/detail-keluar", "/input-cicilan-keluar", "/retur-keluar"],
@@ -64,14 +64,14 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     name: "Profile Toko",
     path: "/profile",
-    relatedPaths: ["/profile" ],
+    relatedPaths: ["/profile"],
   },
 
   {
     icon: <CalenderIcon />,
     name: "Konfigurasi WhatsApp",
     path: "/konfigurasi-whatsapp",
-    relatedPaths: ["/konfigurasi-whatsapp" ],
+    relatedPaths: ["/konfigurasi-whatsapp"],
   },
 
   {
@@ -84,12 +84,12 @@ const navItems: NavItem[] = [
       { name: "Manajemen List barang", path: "/manajemen-list-barang", relatedPaths: ["/tambah-manajemen-list-barang", "/edit-manajemen-list-barang"], pro: false },
     ],
   },
-  
- 
+
+
 ];
 
 const othersItems: NavItem[] = [
-  
+
 ];
 
 const AppSidebar: React.FC = () => {
@@ -111,7 +111,7 @@ const AppSidebar: React.FC = () => {
       const currentPath = location.pathname;
       // Exact match atau jika current path dimulai dengan path (untuk sub-pages)
       const isMainPathActive = currentPath === path || currentPath.startsWith(path + "/");
-      
+
       // Check relatedPaths
       if (relatedPaths && relatedPaths.length > 0) {
         const isRelatedPathActive = relatedPaths.some(
@@ -119,7 +119,7 @@ const AppSidebar: React.FC = () => {
         );
         return isMainPathActive || isRelatedPathActive;
       }
-      
+
       return isMainPathActive;
     },
     [location.pathname]
@@ -181,22 +181,19 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-              } cursor-pointer ${
-                !isExpanded && !isHovered
+              className={`menu-item group ${openSubmenu?.type === menuType && openSubmenu?.index === index
+                ? "menu-item-active"
+                : "menu-item-inactive"
+                } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
-              }`}
+                }`}
             >
               <span
-                className={`menu-item-icon-size  ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
-                }`}
+                className={`menu-item-icon-size  ${openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? "menu-item-icon-active"
+                  : "menu-item-icon-inactive"
+                  }`}
               >
                 {nav.icon}
               </span>
@@ -205,12 +202,11 @@ const AppSidebar: React.FC = () => {
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${
-                    openSubmenu?.type === menuType &&
+                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
-                  }`}
+                    ? "rotate-180 text-brand-500"
+                    : ""
+                    }`}
                 />
               )}
             </button>
@@ -218,16 +214,14 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 to={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path, nav.relatedPaths) ? "menu-item-active" : "menu-item-inactive"
-                }`}
+                className={`menu-item group ${isActive(nav.path, nav.relatedPaths) ? "menu-item-active" : "menu-item-inactive"
+                  }`}
               >
                 <span
-                  className={`menu-item-icon-size ${
-                    isActive(nav.path, nav.relatedPaths)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
+                  className={`menu-item-icon-size ${isActive(nav.path, nav.relatedPaths)
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
+                    }`}
                 >
                   {nav.icon}
                 </span>
@@ -255,32 +249,29 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path, subItem.relatedPaths)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
+                      className={`menu-dropdown-item ${isActive(subItem.path, subItem.relatedPaths)
+                        ? "menu-dropdown-item-active"
+                        : "menu-dropdown-item-inactive"
+                        }`}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path, subItem.relatedPaths)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge`}
+                            className={`ml-auto ${isActive(subItem.path, subItem.relatedPaths)
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
+                              } menu-dropdown-badge`}
                           >
                             new
                           </span>
                         )}
                         {subItem.pro && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path, subItem.relatedPaths)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge`}
+                            className={`ml-auto ${isActive(subItem.path, subItem.relatedPaths)
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
+                              } menu-dropdown-badge`}
                           >
                             pro
                           </span>
@@ -300,10 +291,9 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${
-          isExpanded || isMobileOpen
-            ? "w-[290px]"
-            : isHovered
+        ${isExpanded || isMobileOpen
+          ? "w-[290px]"
+          : isHovered
             ? "w-[290px]"
             : "w-[90px]"
         }
@@ -358,11 +348,10 @@ const AppSidebar: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
+                  ? "lg:justify-center"
+                  : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Menu"
@@ -374,13 +363,12 @@ const AppSidebar: React.FC = () => {
             </div>
             <div className="">
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
+                  ? "lg:justify-center"
+                  : "justify-start"
+                  }`}
               >
-                
+
               </h2>
               {renderMenuItems(othersItems, "others")}
             </div>

@@ -51,7 +51,7 @@ export default function StokBarang() {
     return n.toLocaleString("id-ID");
   };
 
-  
+
 
   const openDetailKeluar = async (id: number | string) => {
     setSelectedId(id);
@@ -100,7 +100,7 @@ export default function StokBarang() {
     const fetchData = async () => {
       setLoading(true);
       const result = await getAllStokBarang(page, filter);
-      
+
       if (result.status) {
         setData(result.data);
         setTotalPages(result.totalPages);
@@ -153,7 +153,7 @@ export default function StokBarang() {
           <div className="mb-4 flex items-center gap-2">
             <input
               type="text"
-              placeholder="Cari nama barang..."
+              placeholder="Cari Nama/kode barang..."
               value={filter}
               onChange={handleFilterChange}
               className="border rounded px-3 py-2 w-64 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
@@ -185,7 +185,12 @@ export default function StokBarang() {
                     data.map((item, idx) => (
                       <TableRow key={item.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * 10 + idx + 1}</TableCell>
-                        <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.nama_barang}</TableCell>
+                        <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">
+                          <div className="truncate">
+                            <div className="font-medium">{item.nama_barang}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">Kode Barang: {item.kd_barang}</div>
+                          </div>
+                        </TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.kd_barang}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.jml_yard || 0}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.jml_rol || 0}</TableCell>
@@ -199,9 +204,9 @@ export default function StokBarang() {
                               className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition-shadow bg-green-600 border border-transparent text-white hover:shadow-md hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                               <span>Keluar</span>
                             </button>
@@ -211,9 +216,9 @@ export default function StokBarang() {
                               className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition-shadow bg-red-600 border border-transparent text-white hover:shadow-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <polyline points="9 17 4 12 9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <line x1="4" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <polyline points="9 17 4 12 9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <line x1="4" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                               <span>Masuk</span>
                             </button>
@@ -289,9 +294,9 @@ export default function StokBarang() {
                               <td className="py-3 px-3 text-gray-800 dark:text-white/90">
                                 <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold ${isMasuk ? 'bg-red-100 text-red-800 dark:bg-red-900/30' : ''} ${isKeluar ? 'bg-green-100 text-green-800 dark:bg-green-900/30' : ''}`}>
                                   {isMasuk ? (
-                                    <svg className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 12l-7 7-7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    <svg className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 12l-7 7-7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                   ) : (
-                                    <svg className="w-3 h-3 text-green-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 12l7-7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    <svg className="w-3 h-3 text-green-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 12l7-7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                   )}
                                   <span>{row.sts_barang}</span>
                                 </span>
