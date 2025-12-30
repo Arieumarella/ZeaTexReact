@@ -33,7 +33,7 @@ const calculateTotalPayment = (berjangka: any[]): number => {
 
 export default function BarangMasuk() {
   const navigate = useNavigate();
-  
+
   const handleDeleteTransaksi = async (id: number, supplierName: string) => {
     Swal.fire({
       title: 'Yakin ingin menghapus transaksi?',
@@ -184,7 +184,7 @@ export default function BarangMasuk() {
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Akhir"
             />
-            
+
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="max-w-full overflow-x-auto">
@@ -248,14 +248,13 @@ export default function BarangMasuk() {
                                   const totalBayar = calculateTotalPayment(item.berjangka || []);
                                   const totalTransaksi = Number(item.total_transaksi);
                                   const isSudahLunas = totalBayar >= totalTransaksi;
-                                  
+
                                   return (
                                     <div>
-                                      <div className={`text-sm font-bold px-3 py-1.5 rounded-full inline-block ${
-                                        isSudahLunas
+                                      <div className={`text-sm font-bold px-3 py-1.5 rounded-full inline-block ${isSudahLunas
                                           ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
                                           : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
-                                      }`}>
+                                        }`}>
                                         {isSudahLunas ? "Lunas - " : ""}Pembayaran Berjangka
                                       </div>
                                     </div>
@@ -287,13 +286,13 @@ export default function BarangMasuk() {
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.penginput?.username || ''}</TableCell>
                         <TableCell className="w-48 px-2 py-2 border text-center">
                           <button className="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded mr-1 hover:bg-blue-600" onClick={() => navigate(`/detail-masuk/${item.id}`)}>Detail</button>
-                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600"  onClick={() => navigate(`/edit-masuk/${item.id}`)}>Edit</button>
+                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600" onClick={() => navigate(`/edit-masuk/${item.id}`)}>Edit</button>
                           {item.status_pembayaran === "1" && (
                             <button className="px-1.5 py-0.5 text-xs bg-purple-500 text-white rounded mr-1 hover:bg-purple-600" onClick={() => navigate(`/input-cicilan/${item.id}`)}>Input Cicilan</button>
                           )}
                           {/* Retur Barang button */}
                           <button className="px-1.5 py-0.5 text-xs bg-indigo-500 text-white rounded mr-1 hover:bg-indigo-600" onClick={() => navigate(`/retur-masuk/${item.id}`)}>Retur</button>
-                          <button 
+                          <button
                             className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                             onClick={() => handleDeleteTransaksi(item.id, item.supplier?.nama || 'Unknown')}
                           >
@@ -310,16 +309,47 @@ export default function BarangMasuk() {
           <div className="flex justify-between items-center mt-4">
             <div className="flex justify-end items-center gap-2 w-full">
               <span className="dark:bg-gray-900 dark:text-white/90">Halaman:</span>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  className={`px-3 py-1 border rounded ${page === i + 1 ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
-                  onClick={() => setPage(i + 1)}
-                  disabled={page === i + 1}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {/* Tombol Prev */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Prev
+              </button>
+              {/* Nomor halaman dinamis */}
+              {(() => {
+                const pageNumbers = [];
+                let start = Math.max(1, page - 2);
+                let end = Math.min(totalPages, page + 2);
+                if (page <= 3) {
+                  end = Math.min(5, totalPages);
+                }
+                if (page >= totalPages - 2) {
+                  start = Math.max(1, totalPages - 4);
+                }
+                for (let i = start; i <= end; i++) {
+                  pageNumbers.push(i);
+                }
+                return pageNumbers.map((num) => (
+                  <button
+                    key={num}
+                    className={`px-3 py-1 border rounded ${page === num ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+                    onClick={() => setPage(num)}
+                    disabled={page === num}
+                  >
+                    {num}
+                  </button>
+                ));
+              })()}
+              {/* Tombol Next */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages || totalPages === 0}
+              >
+                Next
+              </button>
             </div>
           </div>
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />

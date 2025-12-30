@@ -125,7 +125,7 @@ export default function ManajemenPelanggan() {
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.nama}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.noWhatsapp}</TableCell>
                         <TableCell className="w-48 px-2 py-2 border text-center">
-                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600"  onClick={() => navigate(`/edit-manajemen-pelanggan/${item.id}`)}>Edit</button>
+                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600" onClick={() => navigate(`/edit-manajemen-pelanggan/${item.id}`)}>Edit</button>
                           <button className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600" onClick={() => handleDelete(item.id)}>Hapus</button>
                         </TableCell>
                       </TableRow>
@@ -138,16 +138,47 @@ export default function ManajemenPelanggan() {
           <div className="flex justify-between items-center mt-4">
             <div className="flex justify-end items-center gap-2 w-full">
               <span className="dark:bg-gray-900 dark:text-white/90">Halaman:</span>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  className={`px-3 py-1 border rounded ${page === i + 1 ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
-                  onClick={() => setPage(i + 1)}
-                  disabled={page === i + 1}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {/* Tombol Prev */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Prev
+              </button>
+              {/* Nomor halaman dinamis */}
+              {(() => {
+                const pageNumbers = [];
+                let start = Math.max(1, page - 2);
+                let end = Math.min(totalPages, page + 2);
+                if (page <= 3) {
+                  end = Math.min(5, totalPages);
+                }
+                if (page >= totalPages - 2) {
+                  start = Math.max(1, totalPages - 4);
+                }
+                for (let i = start; i <= end; i++) {
+                  pageNumbers.push(i);
+                }
+                return pageNumbers.map((num) => (
+                  <button
+                    key={num}
+                    className={`px-3 py-1 border rounded ${page === num ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+                    onClick={() => setPage(num)}
+                    disabled={page === num}
+                  >
+                    {num}
+                  </button>
+                ));
+              })()}
+              {/* Tombol Next */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages || totalPages === 0}
+              >
+                Next
+              </button>
             </div>
           </div>
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />

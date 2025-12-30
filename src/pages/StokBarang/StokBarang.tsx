@@ -234,16 +234,47 @@ export default function StokBarang() {
           <div className="flex justify-between items-center mt-4">
             <div className="flex justify-end items-center gap-2 w-full">
               <span className="dark:bg-gray-900 dark:text-white/90">Halaman:</span>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  className={`px-3 py-1 border rounded ${page === i + 1 ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
-                  onClick={() => setPage(i + 1)}
-                  disabled={page === i + 1}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {/* Tombol Prev */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Prev
+              </button>
+              {/* Nomor halaman dinamis */}
+              {(() => {
+                const pageNumbers = [];
+                let start = Math.max(1, page - 2);
+                let end = Math.min(totalPages, page + 2);
+                if (page <= 3) {
+                  end = Math.min(5, totalPages);
+                }
+                if (page >= totalPages - 2) {
+                  start = Math.max(1, totalPages - 4);
+                }
+                for (let i = start; i <= end; i++) {
+                  pageNumbers.push(i);
+                }
+                return pageNumbers.map((num) => (
+                  <button
+                    key={num}
+                    className={`px-3 py-1 border rounded ${page === num ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+                    onClick={() => setPage(num)}
+                    disabled={page === num}
+                  >
+                    {num}
+                  </button>
+                ));
+              })()}
+              {/* Tombol Next */}
+              <button
+                className="px-3 py-1 border rounded bg-white text-gray-700 disabled:opacity-50"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages || totalPages === 0}
+              >
+                Next
+              </button>
             </div>
           </div>
           <Modal
