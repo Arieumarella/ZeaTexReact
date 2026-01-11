@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadCrumTreLevel';
 import ComponentCard from '../../components/common/ComponentCard';
 import PageMeta from '../../components/common/PageMeta';
-import { toast,ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { getTransaksiMasukById, createRetur } from '../../service/barangMasuk';
 
@@ -143,7 +143,7 @@ export default function ReturMasuk() {
         return;
       }
       toast.success('Retur berhasil disimpan');
-      
+
     } catch (err) {
       console.error(err);
       toast.error('Terjadi kesalahan saat menyimpan retur');
@@ -177,7 +177,7 @@ export default function ReturMasuk() {
       <div className="w-full mt-8">
         <ComponentCard title={`Retur Transaksi #${transaksi.id}`}>
           <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-b pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-b pb-4">
               <div>
                 <span className="block text-sm text-gray-500 dark:text-gray-400">Tanggal Transaksi</span>
                 <span className="font-semibold block text-gray-800 dark:text-white/90">{new Date(transaksi.tgl_transaksi).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -211,7 +211,12 @@ export default function ReturMasuk() {
                     {transaksi.details.map((d, idx) => (
                       <tr key={d.id} className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td className="border px-3 py-2 text-center text-gray-700 dark:text-white/90">{idx + 1}</td>
-                        <td className="border px-3 py-2 text-gray-700 dark:text-white/90">{d.barang?.nama_barang || '-'}</td>
+                        <td className="border px-3 py-2 text-gray-700 dark:text-white/90">
+                          <div>{d.barang?.nama_barang || '-'}</div>
+                          {d.barang?.kd_barang && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.barang.kd_barang}</div>
+                          )}
+                        </td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(d.harga_satuan || 0))}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{Number(d.jml_yard).toLocaleString()}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{Number(d.jml_rol).toLocaleString()}</td>
