@@ -1199,16 +1199,53 @@ export default function BarangKeluar() {
   };
 
   // Fungsi export Excel
-  const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet((transactions || []).map((item, idx) => ({
-      No: (page - 1) * rowsPerPage + idx + 1,
-      "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
-      "Customer": item.pelanggan?.nama || '',
-      "Total Harga": item.total_transaksi,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "BarangKeluar");
-    XLSX.writeFile(wb, "barang-keluar.xlsx");
+  const handleExportExcel = async () => {
+    try {
+      const params: any = { all: true };
+      if (customer) params.customerId = Number(customer);
+      if (tanggalStart) params.waktuAwal = tanggalStart;
+      if (tanggalEnd) params.waktuAkhir = tanggalEnd;
+      if (searchKdBarang) params.kdBarang = searchKdBarang;
+
+      const res = await getTransaksiKeluar(params);
+      if (res && res.data) {
+        const ws = XLSX.utils.json_to_sheet((res.data || []).map((item, idx) => {
+          const totalBayar = calculateTotalPayment(item.berjangka || []);
+          const totalTransaksi = Number(item.total_transaksi);
+          const isSudahLunas = totalBayar >= totalTransaksi;
+
+          let statusPembayaranStr = "";
+          if (item.status_pembayaran === "0") {
+            statusPembayaranStr = "Lunas";
+          } else {
+            statusPembayaranStr = isSudahLunas ? "Lunas - Pembayaran Berjangka" : "Pembayaran Berjangka";
+          }
+
+          const detailAngsuranStr = item.status_pembayaran === "1" && item.berjangka && item.berjangka.length > 0
+            ? item.berjangka
+                .sort((a: any, b: any) => a.id - b.id)
+                .map((tenor: any, tIdx: number) => `Angsuran ${tIdx + 1}: Rp ${Number(tenor.jml_bayar || 0).toLocaleString()} (Jatuh Tempo: ${formatDateWithMonth(tenor.tgl_jatuh_tempo)})`)
+                .join("; ")
+            : "-";
+
+          return {
+            No: idx + 1,
+            "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
+            "Kode Barang": item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean).join(", ") || "-",
+            "Customer": item.pelanggan?.nama || '',
+            "Total Harga": item.total_transaksi,
+            "Status Pembayaran": statusPembayaranStr,
+            "Detail Angsuran": detailAngsuranStr,
+            "Penginput/Pengedit Data": item.penginput?.username || '',
+          };
+        }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "BarangKeluar");
+        XLSX.writeFile(wb, "barang-keluar.xlsx");
+      }
+    } catch (err) {
+      console.error("Gagal export excel:", err);
+    }
   };
 
   // State transaksi dari server
@@ -1368,10 +1405,23 @@ export default function BarangKeluar() {
   const [selectedCustomerName, setSelectedCustomerName] = useState("");
   const [tanggalStart, setTanggalStart] = useState("");
   const [tanggalEnd, setTanggalEnd] = useState("");
-  const [page, setPage] = useState(1);
+  const [searchKdBarang, setSearchKdBarang] = useState("");
+  const [page, setPage] = useState(() => {
+    const savedPage = sessionStorage.getItem("barang_keluar_page");
+    if (savedPage) {
+      const parsed = parseInt(savedPage, 10);
+      return !isNaN(parsed) && parsed > 0 ? parsed : 1;
+    }
+    return 1;
+  });
   const rowsPerPage = 10;
   const totalPages = totalPagesState;
   const paginatedData = transactions;
+
+  // Persist page in sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("barang_keluar_page", String(page));
+  }, [page]);
 
   // TODO: Fetch transaksi from server when filters / page change
   useEffect(() => {
@@ -1381,7 +1431,8 @@ export default function BarangKeluar() {
         page,
         customerId: customer ? Number(customer) : undefined,
         waktuAwal: tanggalStart,
-        waktuAkhir: tanggalEnd
+        waktuAkhir: tanggalEnd,
+        kdBarang: searchKdBarang
       });
       if (mounted && data) {
         setTransactions(data.data || []);
@@ -1390,7 +1441,7 @@ export default function BarangKeluar() {
     }
     fetchTransaksi();
     return () => { mounted = false; };
-  }, [page, customer, tanggalStart, tanggalEnd]);
+  }, [page, customer, tanggalStart, tanggalEnd, searchKdBarang]);
 
   useEffect(() => {
     let mounted = true;
@@ -1442,6 +1493,13 @@ export default function BarangKeluar() {
             </button>
           </div>
           <div className="mb-4 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Cari kode barang..."
+              value={searchKdBarang}
+              onChange={e => { setSearchKdBarang(e.target.value); setPage(1); }}
+              className="border rounded px-3 py-2 text-sm w-64 bg-white dark:bg-gray-900 dark:text-white/90 placeholder-gray-500 dark:placeholder-gray-400"
+            />
             <div className="relative w-64">
               <input
                 type="text"
@@ -1489,6 +1547,7 @@ export default function BarangKeluar() {
                   <TableRow>
                     <TableCell isHeader className="w-12 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">No</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Tanggal Transaksi</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Kode Barang</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Customer</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Total Harga</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Status Pembayaran</TableCell>
@@ -1499,13 +1558,16 @@ export default function BarangKeluar() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {paginatedData.length === 0 ? (
                     <TableRow>
-                      <td colSpan={7} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
+                      <td colSpan={8} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
                     </TableRow>
                   ) : (
                     paginatedData.map((item, idx) => (
                       <TableRow key={item.id || idx} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * rowsPerPage + idx + 1}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{formatDateWithMonth(item.tgl_transaksi)}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
+                          {item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean).join(", ") || "-"}
+                        </TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.pelanggan?.nama || ''}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
                           {(() => {

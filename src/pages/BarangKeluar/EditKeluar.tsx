@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast } from 'react-toastify';
 import ComponentCard from "../../components/common/ComponentCard";
@@ -8,6 +8,7 @@ import { getAllCustomers, Customer, getAllBarang, Barang, getTransaksiKeluarById
 
 export default function EditKeluar() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [tanggal, setTanggal] = useState("");
   const [customer, setCustomer] = useState("");
   const [barangList, setBarangList] = useState([
@@ -133,7 +134,7 @@ export default function EditKeluar() {
       const payload = {
         id_pelanggan: customer ? parseInt(customer) : null,
         tgl_transaksi: tanggal || new Date().toISOString().slice(0, 10),
-        total_transaksi: Math.round(totalKeseluruhan),
+        total_transaksi: totalKeseluruhan,
         tipe_discount: discountType,
         jml_discount: discountValue,
         tipe_ppn: ppnType,
@@ -163,7 +164,7 @@ export default function EditKeluar() {
       toast.success('Data barang keluar berhasil diperbarui!');
       // Redirect atau refresh setelah berhasil
       setTimeout(() => {
-        window.location.href = '/barang-keluar';
+        navigate('/barang-keluar');
       }, 1500);
     } catch (err) {
       console.error(err);

@@ -23,7 +23,8 @@ export interface StokBarangResponse {
 
 export async function getAllStokBarang(
   page: number = 1,
-  search: string = ""
+  search: string = "",
+  all: boolean = false
 ): Promise<StokBarangResponse> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
@@ -32,7 +33,12 @@ export async function getAllStokBarang(
     return { status: false, data: [], page: 1, total: 0, totalPages: 0 };
   }
   try {
-    const params = new URLSearchParams({ page: String(page) });
+    const params = new URLSearchParams();
+    if (all) {
+      params.append('all', 'true');
+    } else {
+      params.append('page', String(page));
+    }
     if (search) params.append('search', search);
     // use stockBarang endpoint which returns tot_yard_terjual and tot_rol_terjual
     const response = await fetch(`${API_BASE}/barang/stockBarang?${params.toString()}`, {
@@ -184,6 +190,37 @@ export async function getDetilMasuk(id: number | string): Promise<{ status: bool
   } catch (error) {
     toast.error('Terjadi kesalahan jaringan.');
     console.error('Error fetching detil masuk:', error);
+    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+  }
+}
+
+export async function getDetilSisa(id: number | string): Promise<{ status: boolean; data?: Array<any>; message?: string }> {
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    toast.error('Token tidak ditemukan, silakan login ulang.');
+    window.location.replace('/');
+    return { status: false, message: 'Token tidak ditemukan' };
+  }
+  try {
+    const response = await fetch(`${API_BASE}/barang/detilSisa/${id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.status) {
+      toast.error(data.message || 'Gagal mengambil detail sisa stok.');
+      if (data.message === 'Invalid token') {
+        window.location.replace('/');
+      }
+      return { status: false, message: data.message || 'Gagal mengambil detail sisa stok.' };
+    }
+    return { status: true, data: data.data };
+  } catch (error) {
+    toast.error('Terjadi kesalahan jaringan.');
+    console.error('Error fetching detil sisa stok:', error);
     return { status: false, message: 'Terjadi kesalahan jaringan.' };
   }
 }

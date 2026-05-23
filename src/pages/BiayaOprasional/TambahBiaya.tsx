@@ -9,15 +9,17 @@ import PageMeta from "../../components/common/PageMeta";
 export default function TambahBiaya() {
   const [namaBiaya, setNamaBiaya] = useState("");
   const [jumlahUang, setJumlahUang] = useState("");
+  const [tanggal, setTanggal] = useState(new Date().toISOString().split("T")[0]);
   // Penginput diambil dari user login, tidak perlu input di form
 
   // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await createOprasional({ nama_baya: namaBiaya, jml_biaya: jumlahUang });
+    const res = await createOprasional({ nama_baya: namaBiaya, jml_biaya: jumlahUang, tanggal });
     if (res.status) {
       setNamaBiaya("");
       setJumlahUang("");
+      setTanggal(new Date().toISOString().split("T")[0]);
     }
   };
   return (
@@ -37,6 +39,10 @@ export default function TambahBiaya() {
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Nama Biaya</label>
               <input type="text" value={namaBiaya} onChange={e => setNamaBiaya(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal</label>
+              <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required />
             </div>
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Jumlah Uang</label>

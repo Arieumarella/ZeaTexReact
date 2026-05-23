@@ -221,6 +221,8 @@ export interface GetTransaksiParams {
   customerId?: number;
   waktuAwal?: string; // YYYY-MM-DD
   waktuAkhir?: string; // YYYY-MM-DD
+  all?: boolean;
+  kdBarang?: string;
 }
 
 export async function getTransaksiKeluar(params: GetTransaksiParams = {}): Promise<{
@@ -238,10 +240,15 @@ export async function getTransaksiKeluar(params: GetTransaksiParams = {}): Promi
   }
 
   const qs = new URLSearchParams();
-  if (params.page) qs.set('page', String(params.page));
+  if (params.all) {
+    qs.set('all', 'true');
+  } else if (params.page) {
+    qs.set('page', String(params.page));
+  }
   if (params.customerId) qs.set('customerId', String(params.customerId));
   if (params.waktuAwal) qs.set('waktuAwal', params.waktuAwal);
   if (params.waktuAkhir) qs.set('waktuAkhir', params.waktuAkhir);
+  if (params.kdBarang) qs.set('kdBarang', params.kdBarang);
   const url = `${API_BASE}/transaksi-keluar${qs.toString() ? `?${qs.toString()}` : ''}`;
 
   try {

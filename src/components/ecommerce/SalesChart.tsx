@@ -13,6 +13,7 @@ interface ChartDataItem {
   label: string;
   penjualan: number;
   pengeluaran: number;
+  belum_dibayar: number;
 }
 
 export default function SalesChart() {
@@ -39,7 +40,7 @@ export default function SalesChart() {
       type: "bar" as const,
       toolbar: { show: false },
     },
-    colors: ["#10b981", "#f59e0b"], // emerald & orange
+    colors: ["#10b981", "#f59e0b", "#3b82f6"], // emerald, orange & blue
     plotOptions: {
       bar: {
         columnWidth: "55%",
@@ -54,7 +55,7 @@ export default function SalesChart() {
       style: {
         fontSize: "12px",
         fontWeight: 700,
-        colors: ["#065f46", "#b45309"],
+        colors: ["#065f46", "#b45309", "#1d4ed8"],
       },
       offsetY: -8,
       formatter: (val: number) => `Rp ${val.toLocaleString()}`,
@@ -82,7 +83,7 @@ export default function SalesChart() {
       position: "top" as const,
       fontWeight: 700,
       labels: {
-        colors: ["#10b981", "#f59e0b"],
+        colors: ["#10b981", "#f59e0b", "#3b82f6"],
       },
     },
     grid: {
@@ -108,11 +109,16 @@ export default function SalesChart() {
       name: "Pengeluaran",
       data: chartData.map((d) => d.pengeluaran),
     },
+    {
+      name: "Belum Dibayar",
+      data: chartData.map((d) => d.belum_dibayar),
+    },
   ];
 
   // Info summary
   const totalPenjualan = chartData.reduce((a, b) => a + b.penjualan, 0);
   const totalPengeluaran = chartData.reduce((a, b) => a + b.pengeluaran, 0);
+  const totalBelumDibayar = chartData.reduce((a, b) => a + b.belum_dibayar, 0);
   const margin = totalPenjualan - totalPengeluaran;
 
   return (
@@ -132,7 +138,7 @@ export default function SalesChart() {
           </button>
         ))}
       </div>
-      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
         <div className="rounded-lg bg-emerald-100 text-emerald-800 px-2 py-1 font-semibold text-center border border-emerald-300 text-sm">
           Total Penjualan<br />
           <span className="text-base">Rp {totalPenjualan.toLocaleString()}</span>
@@ -141,7 +147,11 @@ export default function SalesChart() {
           Total Pengeluaran<br />
           <span className="text-base">Rp {totalPengeluaran.toLocaleString()}</span>
         </div>
-        <div className={`rounded-lg px-2 py-1 font-semibold text-center border text-sm ${margin >= 0 ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-red-100 text-red-800 border-red-300"}`}>
+        <div className="rounded-lg bg-blue-100 text-blue-800 px-2 py-1 font-semibold text-center border border-blue-300 text-sm">
+          Belum Dibayar<br />
+          <span className="text-base">Rp {totalBelumDibayar.toLocaleString()}</span>
+        </div>
+        <div className={`rounded-lg px-2 py-1 font-semibold text-center border text-sm ${margin >= 0 ? "bg-purple-100 text-purple-800 border-purple-300" : "bg-red-100 text-red-800 border-red-300"}`}>
           Margin Keuntungan<br />
           <span className="text-base">Rp {margin.toLocaleString()}</span>
         </div>

@@ -5,6 +5,7 @@ export interface Oprasional {
   id: number;
   id_user: number;
   nama_baya: string;
+  tanggal?: string;
   jml_biaya: string;
   created_at: string;
   updated_at: string;
@@ -17,7 +18,7 @@ export interface Oprasional {
   user?: { username: string };
 }
 
-export async function getOprasional(page: number = 1, search: string = ""): Promise<{ status: boolean; data?: Oprasional[]; totalPages?: number; message?: string }> {
+export async function getOprasional(page: number = 1, search: string = "", all: boolean = false): Promise<{ status: boolean; data?: Oprasional[]; totalPages?: number; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -25,7 +26,12 @@ export async function getOprasional(page: number = 1, search: string = ""): Prom
     return { status: false, message: 'Token tidak ditemukan' };
   }
   try {
-    const params = new URLSearchParams({ page: String(page) });
+    const params = new URLSearchParams();
+    if (all) {
+      params.append('all', 'true');
+    } else {
+      params.append('page', String(page));
+    }
     if (search) params.append('search', search);
     const response = await fetch(`${API_BASE}/oprasional?${params.toString()}`, {
       method: 'GET',
@@ -79,7 +85,7 @@ export async function getDetailOprasional(id: number): Promise<Oprasional | null
   }
 }
 
-export async function createOprasional({ nama_baya, jml_biaya }: { nama_baya: string; jml_biaya: string }): Promise<{ status: boolean; message?: string }> {
+export async function createOprasional({ nama_baya, jml_biaya, tanggal }: { nama_baya: string; jml_biaya: string; tanggal?: string }): Promise<{ status: boolean; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -93,7 +99,7 @@ export async function createOprasional({ nama_baya, jml_biaya }: { nama_baya: st
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ nama_baya, jml_biaya }),
+      body: JSON.stringify({ nama_baya, jml_biaya, tanggal }),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -111,7 +117,7 @@ export async function createOprasional({ nama_baya, jml_biaya }: { nama_baya: st
   }
 }
 
-export async function editOprasional(id: number, data: { nama_baya: string; jml_biaya: string }): Promise<{ status: boolean; message?: string }> {
+export async function editOprasional(id: number, data: { nama_baya: string; jml_biaya: string; tanggal?: string }): Promise<{ status: boolean; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');

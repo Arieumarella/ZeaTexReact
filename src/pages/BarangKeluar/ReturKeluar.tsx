@@ -143,6 +143,9 @@ export default function ReturKeluar() {
         return;
       }
       toast.success('Retur berhasil disimpan');
+      setTimeout(() => {
+        navigate('/barang-keluar');
+      }, 1500);
     } catch (err) {
       console.error(err);
       toast.error('Terjadi kesalahan saat menyimpan retur');
@@ -216,7 +219,7 @@ export default function ReturKeluar() {
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.barang.kd_barang}</div>
                           )}
                         </td>
-                        <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(d.harga_satuan || 0))}</td>
+                        <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(d.harga_satuan || 0))}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{Number(d.jml_yard).toLocaleString()}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{Number(d.jml_rol).toLocaleString()}</td>
                         <td className="border px-3 py-2 text-right">

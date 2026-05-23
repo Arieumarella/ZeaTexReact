@@ -175,6 +175,8 @@ export interface GetTransaksiParams {
   supplierId?: number;
   waktuAwal?: string; // YYYY-MM-DD
   waktuAkhir?: string; // YYYY-MM-DD
+  all?: boolean;
+  kdBarang?: string;
 }
 
 export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promise<{
@@ -192,10 +194,15 @@ export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promis
   }
 
   const qs = new URLSearchParams();
-  if (params.page) qs.set('page', String(params.page));
+  if (params.all) {
+    qs.set('all', 'true');
+  } else if (params.page) {
+    qs.set('page', String(params.page));
+  }
   if (params.supplierId) qs.set('supplierId', String(params.supplierId));
   if (params.waktuAwal) qs.set('waktuAwal', params.waktuAwal);
   if (params.waktuAkhir) qs.set('waktuAkhir', params.waktuAkhir);
+  if (params.kdBarang) qs.set('kdBarang', params.kdBarang);
   const url = `${API_BASE}/transaksi-masuk${qs.toString() ? `?${qs.toString()}` : ''}`;
 
   try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,6 +9,7 @@ import { getAllSuppliers, Supplier, getAllBarang, Barang, getTransaksiMasukById,
 
 export default function EditMasuk() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [tanggal, setTanggal] = useState("");
   const [suplier, setSuplier] = useState("");
   const [barangList, setBarangList] = useState([
@@ -129,7 +130,7 @@ export default function EditMasuk() {
       const payload = {
         id_supplier: suplier ? parseInt(suplier) : null,
         tgl_transaksi: tanggal || new Date().toISOString().slice(0, 10),
-        total_transaksi: Math.round(totalKeseluruhan),
+        total_transaksi: totalKeseluruhan,
         tipe_discount: discountType,
         jml_discount: discountValue,
         tipe_ppn: ppnType,
@@ -159,7 +160,7 @@ export default function EditMasuk() {
       toast.success('Data barang masuk berhasil diperbarui!');
       // Redirect atau refresh setelah berhasil
       setTimeout(() => {
-        window.location.href = '/barang-masuk';
+        navigate('/barang-masuk');
       }, 1500);
     } catch (err) {
       console.error(err);

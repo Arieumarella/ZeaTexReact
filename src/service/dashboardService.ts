@@ -39,6 +39,7 @@ interface ChartDataItem {
   label: string;
   penjualan: number;
   pengeluaran: number;
+  belum_dibayar: number;
 }
 
 // Get Saldo Perusahaan

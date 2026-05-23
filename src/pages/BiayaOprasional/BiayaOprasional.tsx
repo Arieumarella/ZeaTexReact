@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
+import * as XLSX from "xlsx";
 import { getOprasional, deleteOprasional, Oprasional } from '../../service/oprasionalServices';
 import { ToastContainer } from 'react-toastify';
 import Swal from 'sweetalert2';
@@ -35,7 +36,7 @@ export default function BiayaOprasional() {
         // Filter tanggal
         if (tanggalStart || tanggalEnd) {
           filtered = filtered.filter(item => {
-            const tgl = item.created_at.slice(0, 10);
+            const tgl = (item.tanggal || item.created_at).slice(0, 10);
             if (tanggalStart && tanggalEnd) {
               return tgl >= tanggalStart && tgl <= tanggalEnd;
             } else if (tanggalStart) {
@@ -88,6 +89,40 @@ export default function BiayaOprasional() {
     });
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const res = await getOprasional(1, search, true);
+      if (res && res.status && res.data) {
+        let exportData = res.data;
+        if (tanggalStart || tanggalEnd) {
+          exportData = exportData.filter(item => {
+            const tgl = (item.tanggal || item.created_at).slice(0, 10);
+            if (tanggalStart && tanggalEnd) {
+              return tgl >= tanggalStart && tgl <= tanggalEnd;
+            } else if (tanggalStart) {
+              return tgl >= tanggalStart;
+            } else if (tanggalEnd) {
+              return tgl <= tanggalEnd;
+            }
+            return true;
+          });
+        }
+        const ws = XLSX.utils.json_to_sheet(exportData.map((item, idx) => ({
+          No: idx + 1,
+          "Nama Biaya": item.nama_baya,
+          "Jumlah Uang": Number(item.jml_biaya),
+          "Tanggal": item.tanggal ? item.tanggal.slice(0, 10) : item.created_at.slice(0, 10),
+          "Penginput": item.penginput?.username || item.username || (item.user && item.user.username) || '-'
+        })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "BiayaOperasional");
+        XLSX.writeFile(wb, "biaya-operasional.xlsx");
+      }
+    } catch (err) {
+      console.error("Gagal export excel:", err);
+    }
+  };
+
   return (
     <>
       <PageMeta
@@ -111,6 +146,13 @@ export default function BiayaOprasional() {
               onClick={() => navigate('/tambah-biaya')}
             >
               + Tambah Biaya
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              onClick={handleExportExcel}
+            >
+              Export Excel
             </button>
           </div>
           <div className="mb-4 flex items-center gap-2">
@@ -139,7 +181,7 @@ export default function BiayaOprasional() {
                     <TableCell isHeader className="w-12 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">No</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nama Biaya</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Jumlah Uang</TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Tanggal Input</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Tanggal</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Penginput</TableCell>
                     <TableCell isHeader className="w-48 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
                   </TableRow>
@@ -163,7 +205,9 @@ export default function BiayaOprasional() {
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * rowsPerPage + idx + 1}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.nama_baya}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">Rp {Number(item.jml_biaya).toLocaleString()}</TableCell>
-                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.created_at.slice(0, 10)}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
+                          {item.tanggal ? item.tanggal.slice(0, 10) : item.created_at.slice(0, 10)}
+                        </TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.penginput?.username || item.username || (item.user && item.user.username) || '-'}</TableCell>
                         <TableCell className="w-48 px-2 py-2 border text-center">
                           <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600" onClick={() => navigate(`/edit-biaya/${item.id}`)}>Edit</button>

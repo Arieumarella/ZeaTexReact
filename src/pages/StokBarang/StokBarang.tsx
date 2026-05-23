@@ -11,7 +11,7 @@ import {
   TableCell,
 } from "../../components/ui/table";
 import { Modal } from "../../components/ui/modal";
-import { getAllStokBarang, getDetilKeluar, getDetilMasuk, type StokBarang } from "../../service/stokBarangService";
+import { getAllStokBarang, getDetilKeluar, getDetilMasuk, getDetilSisa, type StokBarang } from "../../service/stokBarangService";
 
 export default function StokBarang() {
   // State untuk data, loading, dan pagination
@@ -28,17 +28,22 @@ export default function StokBarang() {
   const [modalData, setModalData] = useState<Array<any>>([]);
   const [selectedId, setSelectedId] = useState<number | string | null>(null);
   const [modalTitle, setModalTitle] = useState<string>('Detail Barang Masuk/Keluar');
+  const [modalType, setModalType] = useState<'masuk' | 'keluar' | 'sisa'>('masuk');
 
   const modalSummary = useMemo(() => {
     const summary = { masukCount: 0, keluarCount: 0, totalValue: 0 };
     modalData.forEach((r: any) => {
-      const status = (r.sts_barang || "").toString().toLowerCase();
-      if (status.includes("masuk")) summary.masukCount += 1;
-      if (status.includes("keluar")) summary.keluarCount += 1;
-      summary.totalValue += Number(r.total_harga || 0);
+      if (modalType === 'sisa') {
+        summary.totalValue += Number(r.total_nilai_sisa || 0);
+      } else {
+        const status = (r.sts_barang || "").toString().toLowerCase();
+        if (status.includes("masuk")) summary.masukCount += 1;
+        if (status.includes("keluar")) summary.keluarCount += 1;
+        summary.totalValue += Number(r.total_harga || 0);
+      }
     });
     return summary;
-  }, [modalData]);
+  }, [modalData, modalType]);
 
   const formatTanggal = (iso?: string) => {
     if (!iso) return "-";
@@ -54,6 +59,7 @@ export default function StokBarang() {
 
 
   const openDetailKeluar = async (id: number | string) => {
+    setModalType('keluar');
     setSelectedId(id);
     setModalTitle('Detail Barang Keluar');
     setIsModalOpen(true);
@@ -75,6 +81,7 @@ export default function StokBarang() {
   };
 
   const openDetailMasuk = async (id: number | string) => {
+    setModalType('masuk');
     setSelectedId(id);
     setModalTitle('Detail Barang Masuk');
     setIsModalOpen(true);
@@ -83,6 +90,28 @@ export default function StokBarang() {
     setModalData([]);
     try {
       const result = await getDetilMasuk(id);
+      if (!result.status) {
+        setModalError(result.message || 'Data tidak ditemukan');
+      } else {
+        setModalData(result.data || []);
+      }
+    } catch (err: any) {
+      setModalError(err?.message || 'Terjadi kesalahan');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const openDetailSisa = async (id: number | string, namaBarang: string) => {
+    setModalType('sisa');
+    setSelectedId(id);
+    setModalTitle(`Detail Sisa Stok - ${namaBarang}`);
+    setIsModalOpen(true);
+    setModalLoading(true);
+    setModalError(null);
+    setModalData([]);
+    try {
+      const result = await getDetilSisa(id);
       if (!result.status) {
         setModalError(result.message || 'Data tidak ditemukan');
       } else {
@@ -111,19 +140,26 @@ export default function StokBarang() {
   }, [page, filter]);
 
   // Fungsi export Excel
-  const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map((item, idx) => ({
-      No: (page - 1) * 10 + idx + 1,
-      "Nama Barang": item.nama_barang,
-      "Kode Barang": item.kd_barang,
-      "Total Yard": item.jml_yard,
-      "Total Rol": item.jml_rol,
-      "Total Yard Terjual": item.tot_yard_terjual ?? 0,
-      "Total Rol Terjual": item.tot_rol_terjual ?? 0,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "StokBarang");
-    XLSX.writeFile(wb, "stok-barang.xlsx");
+  const handleExportExcel = async () => {
+    try {
+      const result = await getAllStokBarang(1, filter, true);
+      if (result.status) {
+        const ws = XLSX.utils.json_to_sheet(result.data.map((item, idx) => ({
+          No: idx + 1,
+          "Nama Barang": item.nama_barang,
+          "Kode Barang": item.kd_barang,
+          "Total Yard": item.jml_yard,
+          "Total Rol": item.jml_rol,
+          "Total Yard Terjual": item.tot_yard_terjual ?? 0,
+          "Total Rol Terjual": item.tot_rol_terjual ?? 0,
+        })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "StokBarang");
+        XLSX.writeFile(wb, "stok-barang.xlsx");
+      }
+    } catch (err) {
+      console.error("Gagal export excel:", err);
+    }
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +234,18 @@ export default function StokBarang() {
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.tot_rol_terjual ?? 0}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90 hidden lg:table-cell">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openDetailSisa(item.id, item.nama_barang || "")}
+                              aria-label={`Detail sisa stok untuk ${item.nama_barang}`}
+                              className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium transition-shadow bg-purple-600 border border-transparent text-white hover:shadow-md hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                <polyline points="2 17 12 22 22 17" />
+                                <polyline points="2 12 12 17 22 12" />
+                              </svg>
+                              <span>Sisa</span>
+                            </button>
                             <button
                               onClick={() => openDetailKeluar(item.id)}
                               aria-label={`Detail barang keluar untuk ${item.nama_barang}`}
@@ -305,43 +353,74 @@ export default function StokBarang() {
                   </div>
 
                   <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-white/[0.03] max-h-[60vh] overflow-y-auto">
-                    <table className="w-full text-sm table-auto">
-                      <thead>
-                        <tr className="text-left text-xs text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] border-b">
-                          <th className="py-2 px-3">Status</th>
-                          <th className="py-2 px-3">Tanggal</th>
-                          <th className="py-2 px-3">Jml Yard</th>
-                          <th className="py-2 px-3">Jml Rol</th>
-                          <th className="py-2 px-3">Harga Satuan</th>
-                          <th className="py-2 px-3">Total Harga</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {modalData.map((row: any, i: number) => {
-                          const isMasuk = (row.sts_barang || "").toString().toLowerCase().includes("masuk");
-                          const isKeluar = (row.sts_barang || "").toString().toLowerCase().includes("keluar");
-                          return (
+                    {modalType === 'sisa' ? (
+                      <table className="w-full text-sm table-auto">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] border-b">
+                            <th className="py-2 px-3">Tanggal Masuk</th>
+                            <th className="py-2 px-3">Supplier</th>
+                            <th className="py-2 px-3">Qty Masuk (Yard / Rol)</th>
+                            <th className="py-2 px-3">Qty Sisa (Yard / Rol)</th>
+                            <th className="py-2 px-3">Harga Beli Satuan</th>
+                            <th className="py-2 px-3">Nilai Sisa</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {modalData.map((row: any, i: number) => (
                             <tr key={i} className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">
-                                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold ${isMasuk ? 'bg-red-100 text-red-800 dark:bg-red-900/30' : ''} ${isKeluar ? 'bg-green-100 text-green-800 dark:bg-green-900/30' : ''}`}>
-                                  {isMasuk ? (
-                                    <svg className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 12l-7 7-7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                  ) : (
-                                    <svg className="w-3 h-3 text-green-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 12l7-7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                  )}
-                                  <span>{row.sts_barang}</span>
-                                </span>
-                              </td>
                               <td className="py-3 px-3 text-gray-800 dark:text-white/90">{formatTanggal(row.tgl_transaksi)}</td>
-                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">{row.jml_yard ?? "-"}</td>
-                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">{row.jml_rol ?? "-"}</td>
+                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">{row.nama_supplier}</td>
+                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">
+                                {row.orig_yard} yd ({row.orig_rol} rol)
+                              </td>
+                              <td className="py-3 px-3 text-purple-700 dark:text-purple-300 font-semibold">
+                                {row.sisa_yard} yd ({row.sisa_rol} rol)
+                              </td>
                               <td className="py-3 px-3 text-gray-800 dark:text-white/90">Rp {formatRupiah(row.harga_satuan)}</td>
-                              <td className="py-3 px-3 text-gray-800 dark:text-white/90">Rp {formatRupiah(row.total_harga)}</td>
+                              <td className="py-3 px-3 text-gray-800 dark:text-white/90 font-semibold">Rp {formatRupiah(row.total_nilai_sisa)}</td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <table className="w-full text-sm table-auto">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-white/[0.02] border-b">
+                            <th className="py-2 px-3">Status</th>
+                            <th className="py-2 px-3">Tanggal</th>
+                            <th className="py-2 px-3">Jml Yard</th>
+                            <th className="py-2 px-3">Jml Rol</th>
+                            <th className="py-2 px-3">Harga Satuan</th>
+                            <th className="py-2 px-3">Total Harga</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {modalData.map((row: any, i: number) => {
+                            const isMasuk = (row.sts_barang || "").toString().toLowerCase().includes("masuk");
+                            const isKeluar = (row.sts_barang || "").toString().toLowerCase().includes("keluar");
+                            return (
+                              <tr key={i} className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">
+                                  <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold ${isMasuk ? 'bg-red-100 text-red-800 dark:bg-red-900/30' : ''} ${isKeluar ? 'bg-green-100 text-green-800 dark:bg-green-900/30' : ''}`}>
+                                    {isMasuk ? (
+                                      <svg className="w-3 h-3 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 12l-7 7-7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    ) : (
+                                      <svg className="w-3 h-3 text-green-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 12l7-7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    )}
+                                    <span>{row.sts_barang}</span>
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">{formatTanggal(row.tgl_transaksi)}</td>
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">{row.jml_yard ?? "-"}</td>
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">{row.jml_rol ?? "-"}</td>
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">Rp {formatRupiah(row.harga_satuan)}</td>
+                                <td className="py-3 px-3 text-gray-800 dark:text-white/90">Rp {formatRupiah(row.total_harga)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 </div>
               )}

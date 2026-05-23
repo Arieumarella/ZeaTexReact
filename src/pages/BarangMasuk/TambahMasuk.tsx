@@ -69,7 +69,7 @@ export default function TambahMasuk() {
         id_supplier: suplier ? parseInt(suplier) : null,
         id_user: null,
         tgl_transaksi: tanggal || new Date().toISOString().slice(0, 10),
-        total_transaksi: Math.round(totalKeseluruhan),
+        total_transaksi: totalKeseluruhan,
         tipe_discount: discountType,
         jml_discount: discountValue,
         tipe_ppn: ppnType,

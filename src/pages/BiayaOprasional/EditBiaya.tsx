@@ -17,6 +17,7 @@ export default function EditBiaya() {
   const navigate = useNavigate();
   const [namaBiaya, setNamaBiaya] = useState("");
   const [jumlahUang, setJumlahUang] = useState("");
+  const [tanggal, setTanggal] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function EditBiaya() {
         if (detail) {
           setNamaBiaya(detail.nama_baya || "");
           setJumlahUang(detail.jml_biaya || "");
+          setTanggal(detail.tanggal ? detail.tanggal.slice(0, 10) : detail.created_at ? detail.created_at.slice(0, 10) : "");
         }
       } catch (err) {
         // toast error sudah dihandle di service
@@ -46,6 +48,7 @@ export default function EditBiaya() {
       const res = await editOprasional(Number(id), {
         nama_baya: namaBiaya,
         jml_biaya: jumlahUang,
+        tanggal,
       });
       if (res.status) {
        
@@ -75,6 +78,10 @@ export default function EditBiaya() {
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Nama Biaya</label>
               <input type="text" value={namaBiaya} onChange={e => setNamaBiaya(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required disabled={loading} />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Tanggal</label>
+              <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" required disabled={loading} />
             </div>
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Jumlah Uang</label>

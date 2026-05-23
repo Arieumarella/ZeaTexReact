@@ -28,7 +28,7 @@ export default function TambahKeluar() {
   // State for pembayaran
   const [statusPembayaran, setStatusPembayaran] = useState("0"); // "0" = Lunas, "1" = Berjangka
   const [tenor, setTenor] = useState(1); // default 1x cicilan
-  const [tanggalTenor, setTanggalTenor] = useState<string[]>([]);
+  const [tanggalTenor, setTanggalTenor] = useState<string[]>([""]);
 
   const totalBarang = barangList.reduce((sum, barang) => {
     return sum + (Number(barang.jumlahYard) * Number(barang.hargaSatuan));
@@ -59,7 +59,7 @@ export default function TambahKeluar() {
         id_pelanggan: customer ? parseInt(customer) : null,
         id_user: null,
         tgl_transaksi: tanggal || new Date().toISOString().slice(0, 10),
-        total_transaksi: Math.round(totalKeseluruhan),
+        total_transaksi: totalKeseluruhan,
         tipe_discount: discountType,
         jml_discount: discountValue,
         tipe_ppn: ppnType,
