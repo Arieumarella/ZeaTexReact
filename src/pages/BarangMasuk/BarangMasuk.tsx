@@ -87,7 +87,7 @@ export default function BarangMasuk() {
           return {
             No: idx + 1,
             "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
-            "Kode Barang": item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean).join(", ") || "-",
+            "Kode Barang": [...new Set((item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean) || []))].join(", ") || "-",
             "Suplier": item.supplier?.nama || '',
             "Total Harga": item.total_transaksi,
             "Status Pembayaran": statusPembayaranStr,
@@ -270,7 +270,7 @@ export default function BarangMasuk() {
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * rowsPerPage + idx + 1}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{formatDateWithMonth(item.tgl_transaksi)}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
-                          {item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean).join(", ") || "-"}
+                          {[...new Set((item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean) || []))].join(", ") || "-"}
                         </TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.supplier?.nama || ''}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
