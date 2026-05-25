@@ -245,7 +245,10 @@ export async function getTransaksiKeluar(params: GetTransaksiParams = {}): Promi
   } else if (params.page) {
     qs.set('page', String(params.page));
   }
-  if (params.customerId) qs.set('customerId', String(params.customerId));
+  if (params.customerId) {
+    qs.set('customerId', String(params.customerId));
+    qs.set('pelangganId', String(params.customerId));
+  }
   if (params.waktuAwal) qs.set('waktuAwal', params.waktuAwal);
   if (params.waktuAkhir) qs.set('waktuAkhir', params.waktuAkhir);
   if (params.kdBarang) qs.set('kdBarang', params.kdBarang);

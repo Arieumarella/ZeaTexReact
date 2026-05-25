@@ -65,7 +65,10 @@ export default function BarangMasuk() {
 
       const res = await getTransaksiMasuk(params);
       if (res && res.data) {
-        const ws = XLSX.utils.json_to_sheet((res.data || []).map((item, idx) => {
+        const rows: any[] = [];
+        let rowNum = 1;
+
+        (res.data || []).forEach((item: any, idx: number) => {
           const totalBayar = calculateTotalPayment(item.berjangka || []);
           const totalTransaksi = Number(item.total_transaksi);
           const isSudahLunas = totalBayar >= totalTransaksi;
@@ -84,17 +87,45 @@ export default function BarangMasuk() {
                 .join("; ")
             : "-";
 
-          return {
-            No: idx + 1,
-            "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
-            "Kode Barang": [...new Set((item.details?.map((d: any) => d.barang?.kd_barang).filter(Boolean) || []))].join(", ") || "-",
-            "Suplier": item.supplier?.nama || '',
-            "Total Harga": item.total_transaksi,
-            "Status Pembayaran": statusPembayaranStr,
-            "Detail Angsuran": detailAngsuranStr,
-            "Penginput/Pengedit Data": item.penginput?.username || '',
-          };
-        }));
+          const details = item.details || [];
+          if (details.length === 0) {
+            rows.push({
+              No: idx + 1,
+              "ID Transaksi": item.id,
+              "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
+              "Suplier": item.supplier?.nama || '',
+              "Kode Barang": "-",
+              "Nama Barang": "-",
+              "Jumlah Yard": 0,
+              "Jumlah Rol": 0,
+              "Harga Satuan": 0,
+              "Total Harga Transaksi": item.total_transaksi,
+              "Status Pembayaran": statusPembayaranStr,
+              "Detail Angsuran": detailAngsuranStr,
+              "Penginput/Pengedit Data": item.penginput?.username || '',
+            });
+          } else {
+            details.forEach((d: any) => {
+              rows.push({
+                No: idx + 1,
+                "ID Transaksi": item.id,
+                "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
+                "Suplier": item.supplier?.nama || '',
+                "Kode Barang": d.barang?.kd_barang || "-",
+                "Nama Barang": d.barang?.nama_barang || "-",
+                "Jumlah Yard": d.jml_yard || 0,
+                "Jumlah Rol": d.jml_rol || 0,
+                "Harga Satuan": d.harga_satuan || 0,
+                "Total Harga Transaksi": item.total_transaksi,
+                "Status Pembayaran": statusPembayaranStr,
+                "Detail Angsuran": detailAngsuranStr,
+                "Penginput/Pengedit Data": item.penginput?.username || '',
+              });
+            });
+          }
+        });
+
+        const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "BarangMasuk");
         XLSX.writeFile(wb, "barang-masuk.xlsx");
