@@ -19,16 +19,30 @@ import {
 export default function ManajemenListBarang() {
   const navigate = useNavigate();
   const [data, setData] = useState<Barang[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => sessionStorage.getItem("manajemen_listbarang_search") || "");
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("manajemen_listbarang_page");
+    return saved ? parseInt(saved, 10) || 1 : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const rowsPerPage = 10;
+
+  // Persist filter di sessionStorage
+  useEffect(() => {
+    if (search) sessionStorage.setItem("manajemen_listbarang_search", search);
+    else sessionStorage.removeItem("manajemen_listbarang_search");
+    sessionStorage.setItem("manajemen_listbarang_page", String(page));
+  }, [search, page]);
 
   useEffect(() => {
     getBarang(page, search).then(res => {
       if (res && res.status && res.data) {
         setData(res.data);
-        setTotalPages(res.totalPages || 1);
+        const tp = res.totalPages || 1;
+        setTotalPages(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       } else {
         setData([]);
         setTotalPages(1);
@@ -58,7 +72,11 @@ export default function ManajemenListBarang() {
           getBarang(page, search).then(res => {
             if (res && res.status && res.data) {
               setData(res.data);
-              setTotalPages(res.totalPages || 1);
+              const tp = res.totalPages || 1;
+              setTotalPages(tp);
+              if (page > tp && tp >= 1) {
+                setPage(1);
+              }
             } else {
               setData([]);
               setTotalPages(1);

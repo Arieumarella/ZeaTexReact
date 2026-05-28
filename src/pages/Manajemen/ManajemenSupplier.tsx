@@ -21,17 +21,31 @@ export default function ManajemenSupplier() {
   const navigate = useNavigate();
   const [data, setData] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => sessionStorage.getItem("manajemen_supplier_search") || "");
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("manajemen_supplier_page");
+    return saved ? parseInt(saved, 10) || 1 : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const rowsPerPage = 10;
+
+  // Persist filter di sessionStorage
+  useEffect(() => {
+    if (search) sessionStorage.setItem("manajemen_supplier_search", search);
+    else sessionStorage.removeItem("manajemen_supplier_search");
+    sessionStorage.setItem("manajemen_supplier_page", String(page));
+  }, [search, page]);
 
   useEffect(() => {
     setLoading(true);
     getSupplier(page, search).then(res => {
       if (res && res.status && res.data) {
         setData(res.data);
-        setTotalPages(res.totalPages || 1);
+        const tp = res.totalPages || 1;
+        setTotalPages(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       } else {
         setData([]);
         setTotalPages(1);
@@ -60,7 +74,11 @@ export default function ManajemenSupplier() {
           getSupplier(page, search).then(res => {
             if (res && res.status && res.data) {
               setData(res.data);
-              setTotalPages(res.totalPages || 1);
+              const tp = res.totalPages || 1;
+              setTotalPages(tp);
+              if (page > tp && tp >= 1) {
+                setPage(1);
+              }
             } else {
               setData([]);
               setTotalPages(1);

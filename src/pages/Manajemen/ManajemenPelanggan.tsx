@@ -18,17 +18,31 @@ import {
 export default function ManajemenPelanggan() {
   const navigate = useNavigate();
   const [data, setData] = useState<Pelanggan[]>([]);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => sessionStorage.getItem("manajemen_pelanggan_search") || "");
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("manajemen_pelanggan_page");
+    return saved ? parseInt(saved, 10) || 1 : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  // Persist filter di sessionStorage
+  useEffect(() => {
+    if (search) sessionStorage.setItem("manajemen_pelanggan_search", search);
+    else sessionStorage.removeItem("manajemen_pelanggan_search");
+    sessionStorage.setItem("manajemen_pelanggan_page", String(page));
+  }, [search, page]);
 
   useEffect(() => {
     setLoading(true);
     getPelanggan(page, search).then(res => {
       if (res && res.status) {
         setData(res.data);
-        setTotalPages(res.totalPages || 1);
+        const tp = res.totalPages || 1;
+        setTotalPages(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       } else {
         setData([]);
         setTotalPages(1);
@@ -57,7 +71,11 @@ export default function ManajemenPelanggan() {
           getPelanggan(page, search).then(res => {
             if (res && res.status) {
               setData(res.data);
-              setTotalPages(res.totalPages || 1);
+              const tp = res.totalPages || 1;
+              setTotalPages(tp);
+              if (page > tp && tp >= 1) {
+                setPage(1);
+              }
             } else {
               setData([]);
               setTotalPages(1);

@@ -17,25 +17,13 @@ export default function Home() {
         {/* Summary Cards */}
         <DashboardSummary />
 
-        {/* Charts Grid */}
+        {/* Sales Chart - Full width */}
+        <SalesChart />
+
+        {/* Operational Costs, Top Selling, Top Customers */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Sales Chart - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <SalesChart />
-          </div>
-
-          {/* Top Selling Items - Minimal height */}
-          <div className="lg:col-span-1">
-            <TopSellingItems />
-          </div>
-        </div>
-
-        {/* Operational Costs & More Charts */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Operational Costs */}
           <OperationalCostsChart />
-
-          {/* Top Customers */}
+          <TopSellingItems />
           <TopCustomers />
         </div>
 

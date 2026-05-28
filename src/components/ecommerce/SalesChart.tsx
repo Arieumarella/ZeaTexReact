@@ -43,7 +43,7 @@ export default function SalesChart() {
     colors: ["#10b981", "#f59e0b", "#3b82f6"], // emerald, orange & blue
     plotOptions: {
       bar: {
-        columnWidth: "55%",
+        columnWidth: "75%",
         borderRadius: 6,
         dataLabels: {
           position: "top" as const,
@@ -51,14 +51,7 @@ export default function SalesChart() {
       },
     },
     dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: "12px",
-        fontWeight: 700,
-        colors: ["#065f46", "#b45309", "#1d4ed8"],
-      },
-      offsetY: -8,
-      formatter: (val: number) => `Rp ${val.toLocaleString()}`,
+      enabled: false,
     },
     xaxis: {
       categories: chartData.map((d) => d.label),
@@ -142,24 +135,28 @@ export default function SalesChart() {
         <div className="rounded-lg bg-emerald-100 text-emerald-800 px-2 py-1 font-semibold text-center border border-emerald-300 text-sm">
           Total Penjualan<br />
           <span className="text-base">Rp {totalPenjualan.toLocaleString()}</span>
+          <div className="text-[10px] font-normal mt-0.5 opacity-70">Data Transaksi Keluar</div>
         </div>
         <div className="rounded-lg bg-orange-100 text-orange-800 px-2 py-1 font-semibold text-center border border-orange-300 text-sm">
           Total Pengeluaran<br />
           <span className="text-base">Rp {totalPengeluaran.toLocaleString()}</span>
+          <div className="text-[10px] font-normal mt-0.5 opacity-70">Transaksi Masuk + Biaya Oprasional</div>
         </div>
         <div className="rounded-lg bg-blue-100 text-blue-800 px-2 py-1 font-semibold text-center border border-blue-300 text-sm">
           Belum Dibayar<br />
           <span className="text-base">Rp {totalBelumDibayar.toLocaleString()}</span>
+          <div className="text-[10px] font-normal mt-0.5 opacity-70">Hanya Data Transaksi Keluar</div>
         </div>
         <div className={`rounded-lg px-2 py-1 font-semibold text-center border text-sm ${margin >= 0 ? "bg-purple-100 text-purple-800 border-purple-300" : "bg-red-100 text-red-800 border-red-300"}`}>
           Margin Keuntungan<br />
           <span className="text-base">Rp {margin.toLocaleString()}</span>
+          <div className="text-[10px] font-normal mt-0.5 opacity-70">Penjualan - Pengeluaran</div>
         </div>
       </div>
       {loading ? (
         <div className="h-56 flex items-center justify-center animate-pulse text-gray-400">Loading chart...</div>
       ) : (
-        <ReactApexChart options={chartOptions} series={chartSeries} type="bar" height={300} />
+        <ReactApexChart options={chartOptions} series={chartSeries} type="bar" height={420} />
       )}
     </div>
   );

@@ -156,12 +156,12 @@ export default function OperationalCostsChart() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-indigo-800 dark:text-indigo-200">Urutkan:</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-semibold text-indigo-800 dark:text-indigo-200 whitespace-nowrap">Urutkan:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-indigo-900/40 dark:bg-gray-800 dark:text-gray-300"
+              className="w-full min-w-0 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-indigo-900/40 dark:bg-gray-800 dark:text-gray-300"
             >
               <option value="jumlah-desc">Termahal (Tinggi-Rendah)</option>
               <option value="jumlah-asc">Termurah (Rendah-Tinggi)</option>
@@ -170,13 +170,13 @@ export default function OperationalCostsChart() {
           </div>
         </div>
 
-        {/* Chart dengan scroll vertikal jika data sangat banyak */}
+        {/* Chart dengan scroll vertikal/horizontal jika data sangat banyak */}
         {displayedCosts.length === 0 ? (
           <div className="flex h-56 items-center justify-center text-gray-500 dark:text-gray-400 font-medium">
             Tidak ada data biaya operasional pada periode ini
           </div>
         ) : (
-          <div className="overflow-y-auto max-h-[400px] pr-2 scrollbar-thin scrollbar-thumb-indigo-200 dark:scrollbar-thumb-indigo-900/50">
+          <div className="overflow-x-auto overflow-y-auto max-h-[400px] pr-2 scrollbar-thin scrollbar-thumb-indigo-200 dark:scrollbar-thumb-indigo-900/50">
             <ReactApexChart options={chartOptions} series={chartSeries} type="bar" height={chartHeight} />
           </div>
         )}

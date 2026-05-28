@@ -22,11 +22,26 @@ export default function BiayaOprasional() {
   const [data, setData] = useState<Oprasional[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
-  const [tanggalStart, setTanggalStart] = useState("");
-  const [tanggalEnd, setTanggalEnd] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [tanggalStart, setTanggalStart] = useState(() => sessionStorage.getItem("biaya_oprasional_tglAwal") || "");
+  const [tanggalEnd, setTanggalEnd] = useState(() => sessionStorage.getItem("biaya_oprasional_tglAkhir") || "");
+  const [search, setSearch] = useState(() => sessionStorage.getItem("biaya_oprasional_search") || "");
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("biaya_oprasional_page");
+    return saved ? parseInt(saved, 10) || 1 : 1;
+  });
   const rowsPerPage = 10;
+
+  // Persist filter di sessionStorage
+  useEffect(() => {
+    if (search) sessionStorage.setItem("biaya_oprasional_search", search);
+    else sessionStorage.removeItem("biaya_oprasional_search");
+    if (tanggalStart) sessionStorage.setItem("biaya_oprasional_tglAwal", tanggalStart);
+    else sessionStorage.removeItem("biaya_oprasional_tglAwal");
+    if (tanggalEnd) sessionStorage.setItem("biaya_oprasional_tglAkhir", tanggalEnd);
+    else sessionStorage.removeItem("biaya_oprasional_tglAkhir");
+    sessionStorage.setItem("biaya_oprasional_page", String(page));
+  }, [search, tanggalStart, tanggalEnd, page]);
+
   // Filter tanggal rentang
   useEffect(() => {
     setLoading(true);
@@ -48,7 +63,11 @@ export default function BiayaOprasional() {
           });
         }
         setData(filtered);
-        setTotalPages(res.totalPages || 1);
+        const tp = res.totalPages || 1;
+        setTotalPages(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       } else {
         setData([]);
         setTotalPages(1);
@@ -77,7 +96,11 @@ export default function BiayaOprasional() {
           getOprasional(page).then(res => {
             if (res && res.status && res.data) {
               setData(res.data);
-              setTotalPages(res.totalPages || 1);
+              const tp = res.totalPages || 1;
+              setTotalPages(tp);
+              if (page > tp && tp >= 1) {
+                setPage(1);
+              }
             } else {
               setData([]);
               setTotalPages(1);

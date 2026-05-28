@@ -17,8 +17,11 @@ export default function StokBarang() {
   // State untuk data, loading, dan pagination
   const [data, setData] = useState<StokBarang[]>([]);
   const [_loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
-  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState(() => sessionStorage.getItem("stok_barang_filter") || "");
+  const [page, setPage] = useState(() => {
+    const saved = sessionStorage.getItem("stok_barang_page");
+    return saved ? parseInt(saved, 10) || 1 : 1;
+  });
   const [totalPages, setTotalPages] = useState(0);
 
   // Modal state for detail masuk/keluar
@@ -124,6 +127,13 @@ export default function StokBarang() {
     }
   };
 
+  // Persist filter di sessionStorage
+  useEffect(() => {
+    if (filter) sessionStorage.setItem("stok_barang_filter", filter);
+    else sessionStorage.removeItem("stok_barang_filter");
+    sessionStorage.setItem("stok_barang_page", String(page));
+  }, [filter, page]);
+
   // Fetch data dari API
   useEffect(() => {
     const fetchData = async () => {
@@ -132,7 +142,11 @@ export default function StokBarang() {
 
       if (result.status) {
         setData(result.data);
-        setTotalPages(result.totalPages);
+        const tp = result.totalPages;
+        setTotalPages(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       }
       setLoading(false);
     };

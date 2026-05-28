@@ -110,7 +110,7 @@ export default function UpcomingExpiredTransactions() {
             <p className="text-xs text-gray-600 dark:text-gray-400">{item.pelanggan}</p>
             <p className="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">Rp {item.totalHarga.toLocaleString()}</p>
             {item.tanggalJatuhTempo && (
-              <p className="text-xs text-blue-600 dark:text-blue-300">Jatuh Tempo: {formatTanggalIndo(item.tanggalJatuhTempo)}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-300">Jatuh Tempo: {item.tanggalJatuhTempo}</p>
             )}
           </div>
           <div className="flex items-center gap-2">

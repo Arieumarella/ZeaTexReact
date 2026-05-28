@@ -1216,6 +1216,7 @@ export default function BarangKeluar() {
           const totalBayar = calculateTotalPayment(item.berjangka || []);
           const totalTransaksi = Number(item.total_transaksi);
           const isSudahLunas = totalBayar >= totalTransaksi;
+          const sisaPembayaran = item.status_pembayaran === "0" ? 0 : Math.max(0, totalTransaksi - totalBayar);
 
           let statusPembayaranStr = "";
           if (item.status_pembayaran === "0") {
@@ -1244,6 +1245,7 @@ export default function BarangKeluar() {
               "Jumlah Rol": 0,
               "Harga Satuan": 0,
               "Total Harga Transaksi": item.total_transaksi,
+              "Sisa Pembayaran": sisaPembayaran,
               "Status Pembayaran": statusPembayaranStr,
               "Detail Angsuran": detailAngsuranStr,
               "Penginput/Pengedit Data": item.penginput?.username || '',
@@ -1261,6 +1263,7 @@ export default function BarangKeluar() {
                 "Jumlah Rol": d.jml_rol || 0,
                 "Harga Satuan": d.harga_satuan || 0,
                 "Total Harga Transaksi": item.total_transaksi,
+                "Sisa Pembayaran": sisaPembayaran,
                 "Status Pembayaran": statusPembayaranStr,
                 "Detail Angsuran": detailAngsuranStr,
                 "Penginput/Pengedit Data": item.penginput?.username || '',
@@ -1428,15 +1431,15 @@ export default function BarangKeluar() {
     window.print();
   };
 
-  // State filter dan pagination
-  const [customer, setCustomer] = useState("");
+  // State filter dan pagination — diambil dari sessionStorage agar persist saat navigasi
+  const [customer, setCustomer] = useState(() => sessionStorage.getItem("barang_keluar_customer") || "");
   const [customers, setCustomers] = useState<any[]>([]);
   const [customerQuery, setCustomerQuery] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  const [selectedCustomerName, setSelectedCustomerName] = useState("");
-  const [tanggalStart, setTanggalStart] = useState("");
-  const [tanggalEnd, setTanggalEnd] = useState("");
-  const [searchKdBarang, setSearchKdBarang] = useState("");
+  const [selectedCustomerName, setSelectedCustomerName] = useState(() => sessionStorage.getItem("barang_keluar_customerName") || "");
+  const [tanggalStart, setTanggalStart] = useState(() => sessionStorage.getItem("barang_keluar_tglAwal") || "");
+  const [tanggalEnd, setTanggalEnd] = useState(() => sessionStorage.getItem("barang_keluar_tglAkhir") || "");
+  const [searchKdBarang, setSearchKdBarang] = useState(() => sessionStorage.getItem("barang_keluar_kdBarang") || "");
   const [page, setPage] = useState(() => {
     const savedPage = sessionStorage.getItem("barang_keluar_page");
     if (savedPage) {
@@ -1449,10 +1452,24 @@ export default function BarangKeluar() {
   const totalPages = totalPagesState;
   const paginatedData = transactions;
 
-  // Persist page in sessionStorage
+  // Persist page di sessionStorage
   useEffect(() => {
     sessionStorage.setItem("barang_keluar_page", String(page));
   }, [page]);
+
+  // Persist filter di sessionStorage agar tetap ada saat kembali dari halaman lain
+  useEffect(() => {
+    if (customer) sessionStorage.setItem("barang_keluar_customer", customer);
+    else sessionStorage.removeItem("barang_keluar_customer");
+    if (selectedCustomerName) sessionStorage.setItem("barang_keluar_customerName", selectedCustomerName);
+    else sessionStorage.removeItem("barang_keluar_customerName");
+    if (tanggalStart) sessionStorage.setItem("barang_keluar_tglAwal", tanggalStart);
+    else sessionStorage.removeItem("barang_keluar_tglAwal");
+    if (tanggalEnd) sessionStorage.setItem("barang_keluar_tglAkhir", tanggalEnd);
+    else sessionStorage.removeItem("barang_keluar_tglAkhir");
+    if (searchKdBarang) sessionStorage.setItem("barang_keluar_kdBarang", searchKdBarang);
+    else sessionStorage.removeItem("barang_keluar_kdBarang");
+  }, [customer, selectedCustomerName, tanggalStart, tanggalEnd, searchKdBarang]);
 
   // TODO: Fetch transaksi from server when filters / page change
   useEffect(() => {
@@ -1467,7 +1484,11 @@ export default function BarangKeluar() {
       });
       if (mounted && data) {
         setTransactions(data.data || []);
-        setTotalPagesState(data.totalPages || 1);
+        const tp = data.totalPages || 1;
+        setTotalPagesState(tp);
+        if (page > tp && tp >= 1) {
+          setPage(1);
+        }
       }
     }
     fetchTransaksi();
@@ -1581,6 +1602,7 @@ export default function BarangKeluar() {
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Kode Barang</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Customer</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Total Harga</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Sisa Pembayaran</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Status Pembayaran</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Penginput/Pengedit Data</TableCell>
                     <TableCell isHeader className="w-64 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
@@ -1589,7 +1611,7 @@ export default function BarangKeluar() {
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {paginatedData.length === 0 ? (
                     <TableRow>
-                      <td colSpan={8} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
+                      <td colSpan={9} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
                     </TableRow>
                   ) : (
                     paginatedData.map((item, idx) => (
@@ -1621,6 +1643,22 @@ export default function BarangKeluar() {
                                   )}
                                 </div>
                               </div>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
+                          {(() => {
+                            const totalTagihan = Number(item.total_transaksi);
+                            if (item.status_pembayaran === "0") {
+                              return <span className="text-green-600 dark:text-green-400 font-semibold">Lunas</span>;
+                            }
+                            const totalBayar = calculateTotalPayment(item.berjangka || []);
+                            const sisa = Math.max(0, totalTagihan - totalBayar);
+                            const fmt = (v: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(v);
+                            return (
+                              <span className={sisa > 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-green-600 dark:text-green-400 font-semibold'}>
+                                {fmt(sisa)}
+                              </span>
                             );
                           })()}
                         </TableCell>
