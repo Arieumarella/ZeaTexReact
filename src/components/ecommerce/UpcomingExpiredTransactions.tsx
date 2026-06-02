@@ -93,42 +93,56 @@ export default function UpcomingExpiredTransactions() {
     }
   };
 
-  const TransactionList = ({ data, title, tipe }: { data: UpcomingExpired[]; title: string; tipe: "masuk" | "keluar" }) => (
-    <div className="space-y-3">
-      <h4 className="font-semibold text-gray-900 dark:text-white">{title}</h4>
-      {data.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-white/[0.05] cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition"
-          onClick={() =>
-            tipe === "masuk"
-              ? navigate(`/input-cicilan/${item.id}`)
-              : navigate(`/input-cicilan-keluar/${item.id}`)
-          }
-        >
-          <div className="flex-1">
-            <p className="font-medium text-gray-900 dark:text-white">{item.nomorTransaksi}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{item.pelanggan}</p>
-            <p className="mt-1 text-xs font-semibold text-gray-800 dark:text-white">
-              Sisa: Rp {item.sisaTagihan.toLocaleString()} <span className="text-gray-500 font-normal dark:text-gray-400"> (Total: Rp {item.totalHarga.toLocaleString()})</span>
-            </p>
-            {item.tanggalJatuhTempo && (
-              <p className="text-xs text-blue-600 dark:text-blue-300">Jatuh Tempo: {item.tanggalJatuhTempo}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">
-                {item.hariHitung !== null ? item.hariHitung : "-"}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">hari</p>
+  const TransactionList = ({ data, title, tipe }: { data: UpcomingExpired[]; title: string; tipe: "masuk" | "keluar" }) => {
+    const totalSisa = data.reduce((sum, item) => sum + (item.sisaTagihan || 0), 0);
+    return (
+      <div className="space-y-3 flex flex-col h-full">
+        <h4 className="font-semibold text-gray-900 dark:text-white">{title}</h4>
+        <div className="space-y-3 flex-1">
+          {data.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-white/[0.05] cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition"
+              onClick={() =>
+                tipe === "masuk"
+                  ? navigate(`/input-cicilan/${item.id}`)
+                  : navigate(`/input-cicilan-keluar/${item.id}`)
+              }
+            >
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 dark:text-white">{item.nomorTransaksi}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{item.pelanggan}</p>
+                <p className="mt-1 text-xs font-semibold text-gray-800 dark:text-white">
+                  Sisa: Rp {item.sisaTagihan.toLocaleString()} <span className="text-gray-500 font-normal dark:text-gray-400"> (Total: Rp {item.totalHarga.toLocaleString()})</span>
+                </p>
+                {item.tanggalJatuhTempo && (
+                  <p className="text-xs text-blue-600 dark:text-blue-300">Jatuh Tempo: {item.tanggalJatuhTempo}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    {item.hariHitung !== null ? item.hariHitung : "-"}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">hari</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span>
+              </div>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span>
-          </div>
+          ))}
+          {data.length === 0 && (
+            <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+              Tidak ada transaksi mendekati jatuh tempo.
+            </div>
+          )}
         </div>
-      ))}
-    </div>
-  );
+        <div className="pt-3 border-t border-gray-200 dark:border-white/[0.05] flex justify-between items-center mt-3">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Sisa:</span>
+          <span className="text-base font-bold text-blue-600 dark:text-blue-400">Rp {totalSisa.toLocaleString()}</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <ComponentCard title="Transaksi Mendekati Jatuh Tempo">
