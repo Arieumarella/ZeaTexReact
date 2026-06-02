@@ -9,7 +9,7 @@ interface UpcomingExpired {
   pelanggan: string;
   totalHarga: number;
   sisaTagihan: number;
-  hariHitung: number;
+  hariHitung: number | null;
   status: "urgent" | "warning" | "normal";
   tanggalJatuhTempo?: string;
 }
@@ -118,7 +118,9 @@ export default function UpcomingExpiredTransactions() {
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{item.hariHitung}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                {item.hariHitung !== null ? item.hariHitung : "-"}
+              </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">hari</p>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(item.status)}`}>{getStatusLabel(item.status)}</span>
