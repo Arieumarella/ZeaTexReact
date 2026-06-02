@@ -1251,7 +1251,7 @@ export default function BarangKeluar() {
               "Penginput/Pengedit Data": item.penginput?.username || '',
             });
           } else {
-            details.forEach((d: any) => {
+            details.forEach((d: any, dIdx: number) => {
               rows.push({
                 No: idx + 1,
                 "ID Transaksi": item.id,
@@ -1262,8 +1262,8 @@ export default function BarangKeluar() {
                 "Jumlah Yard": d.jml_yard || 0,
                 "Jumlah Rol": d.jml_rol || 0,
                 "Harga Satuan": d.harga_satuan || 0,
-                "Total Harga Transaksi": item.total_transaksi,
-                "Sisa Pembayaran": sisaPembayaran,
+                "Total Harga Transaksi": dIdx === 0 ? item.total_transaksi : "",
+                "Sisa Pembayaran": dIdx === 0 ? sisaPembayaran : "",
                 "Status Pembayaran": statusPembayaranStr,
                 "Detail Angsuran": detailAngsuranStr,
                 "Penginput/Pengedit Data": item.penginput?.username || '',

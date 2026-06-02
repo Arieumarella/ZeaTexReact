@@ -171,12 +171,8 @@ export default function DetailMasuk() {
                     {(transaksi.details || []).map((detail, idx) => (
                       <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td className="border px-3 py-2 text-center text-gray-700 dark:text-white/90">{idx + 1}</td>
-                        <td className="border px-3 py-2 text-gray-700 dark:text-white/90">
-                          <div>{detail.barang?.nama_barang || '-'}</div>
-                          {detail.barang?.kd_barang && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{detail.barang.kd_barang}</div>
-                          )}
-                        </td>
+                        <td className="border px-3 py-2 text-gray-700 dark:text-white/90">{detail.barang?.nama_barang || '-'}</td>
+                        <td className="border px-3 py-2 text-gray-700 dark:text-white/90">{detail.barang?.kd_barang || '-'}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{detail.jml_yard.toLocaleString()}</td>
                         <td className="border px-3 py-2 text-right text-gray-700 dark:text-white/90">{detail.jml_rol}</td>
                         <td className={`border px-3 py-2 text-right font-semibold ${(detail.jml_yard_retur || 0) > 0 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-white/90'}`}>
