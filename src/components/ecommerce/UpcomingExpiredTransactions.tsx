@@ -8,6 +8,7 @@ interface UpcomingExpired {
   nomorTransaksi: string;
   pelanggan: string;
   totalHarga: number;
+  sisaTagihan: number;
   hariHitung: number;
   status: "urgent" | "warning" | "normal";
   tanggalJatuhTempo?: string;
@@ -108,7 +109,9 @@ export default function UpcomingExpiredTransactions() {
           <div className="flex-1">
             <p className="font-medium text-gray-900 dark:text-white">{item.nomorTransaksi}</p>
             <p className="text-xs text-gray-600 dark:text-gray-400">{item.pelanggan}</p>
-            <p className="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">Rp {item.totalHarga.toLocaleString()}</p>
+            <p className="mt-1 text-xs font-semibold text-gray-800 dark:text-white">
+              Sisa: Rp {item.sisaTagihan.toLocaleString()} <span className="text-gray-500 font-normal dark:text-gray-400"> (Total: Rp {item.totalHarga.toLocaleString()})</span>
+            </p>
             {item.tanggalJatuhTempo && (
               <p className="text-xs text-blue-600 dark:text-blue-300">Jatuh Tempo: {item.tanggalJatuhTempo}</p>
             )}
