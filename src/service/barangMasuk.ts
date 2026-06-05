@@ -102,7 +102,7 @@ export interface CreateTransaksiPayload {
   }>;
 }
 
-export async function createTransaksiMasuk(payload: CreateTransaksiPayload): Promise<any> {
+export async function createTransaksiMasuk(payload: any, notaFile: File | null = null): Promise<any> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -111,13 +111,26 @@ export async function createTransaksiMasuk(payload: CreateTransaksiPayload): Pro
   }
 
   try {
+    const formData = new FormData();
+    for (const key in payload) {
+      if (payload[key] !== undefined && payload[key] !== null) {
+        if (typeof payload[key] === 'object') {
+          formData.append(key, JSON.stringify(payload[key]));
+        } else {
+          formData.append(key, String(payload[key]));
+        }
+      }
+    }
+    if (notaFile) {
+      formData.append('nota', notaFile);
+    }
+
     const res = await fetch(API_BASE + '/transaksi-masuk', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(payload)
+      body: formData
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -147,6 +160,7 @@ export interface TransaksiItem {
   tipe_ppn: string;
   jml_ppn: number;
   catatan: string;
+  nota?: string | null;
   details?: Array<{
     id: number;
     id_barang: number;
@@ -259,27 +273,9 @@ export async function getTransaksiMasukById(id: number): Promise<TransaksiItem |
 
 export async function updateTransaksiMasuk(
   id: number,
-  payload: {
-    id_supplier: number | null;
-    tgl_transaksi: string;
-    total_transaksi: number;
-    tipe_discount: string;
-    jml_discount: number;
-    tipe_ppn: string;
-    jml_ppn: number;
-    catatan: string | null;
-    status_pembayaran: string;
-    tenor: number;
-    tanggal_tenor: string[];
-    details: Array<{
-      id_barang: number | null;
-      kode_barang: string | null;
-      nama_barang: string | null;
-      jml_yard: number;
-      jml_rol: number;
-      harga_satuan: number;
-    }>;
-  }
+  payload: any,
+  notaFile: File | null = null,
+  hapusNota: boolean = false
 ): Promise<{ status: boolean; message: string; data?: any } | null> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
@@ -289,13 +285,29 @@ export async function updateTransaksiMasuk(
   }
 
   try {
+    const formData = new FormData();
+    for (const key in payload) {
+      if (payload[key] !== undefined && payload[key] !== null) {
+        if (typeof payload[key] === 'object') {
+          formData.append(key, JSON.stringify(payload[key]));
+        } else {
+          formData.append(key, String(payload[key]));
+        }
+      }
+    }
+    if (notaFile) {
+      formData.append('nota', notaFile);
+    }
+    if (hapusNota) {
+      formData.append('hapus_nota', 'true');
+    }
+
     const res = await fetch(`${API_BASE}/transaksi-masuk/${id}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(payload)
+      body: formData
     });
     const data = await res.json();
     if (!res.ok || !data.status) {

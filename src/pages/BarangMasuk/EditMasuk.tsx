@@ -34,6 +34,12 @@ export default function EditMasuk() {
   const [berjangkaData, setBerjangkaData] = useState<any[]>([]);
   const [minTenor, setMinTenor] = useState(0);
 
+  // States for nota upload
+  const [currentNota, setCurrentNota] = useState<string | null>(null);
+  const [nota, setNota] = useState<File | null>(null);
+  const [hapusNota, setHapusNota] = useState(false);
+  const [notaKey, setNotaKey] = useState(Date.now());
+
   // Fetch data on mount
   useEffect(() => {
     let mounted = true;
@@ -60,6 +66,7 @@ export default function EditMasuk() {
             setPpnType(trans.tipe_ppn || 'persen');
             setPpnValue(trans.jml_ppn || 0);
             setCatatan(trans.catatan || '');
+            setCurrentNota(trans.nota || null);
 
             if (trans.details && trans.details.length > 0) {
               console.log('trans.details:', trans.details);
@@ -150,7 +157,7 @@ export default function EditMasuk() {
       };
       console.log('UPDATE payload:', JSON.stringify(payload, null, 2));
 
-      const result = await updateTransaksiMasuk(parseInt(id!), payload);
+      const result = await updateTransaksiMasuk(parseInt(id!), payload, nota, hapusNota);
 
       if (!result || !result.status) {
         toast.error(result?.message || 'Gagal memperbarui data.');
@@ -515,6 +522,76 @@ export default function EditMasuk() {
             <div className="pt-6">
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Catatan (Opsional)</label>
               <textarea className="border rounded px-3 py-2 w-full min-h-[80px] dark:bg-gray-900 dark:text-white/90" placeholder="Catatan tambahan..." value={catatan} onChange={e => setCatatan(e.target.value)} />
+            </div>
+            {/* Pratinjau & Upload Nota */}
+            <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-white">Nota Pembayaran</label>
+
+              {currentNota && !hapusNota ? (
+                <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg max-w-md bg-gray-50 dark:bg-gray-850 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/${currentNota}`}
+                      alt="Nota Pembayaran"
+                      className="w-16 h-16 object-cover rounded border border-gray-300 dark:border-gray-600"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 dark:text-white truncate max-w-[150px]" title={currentNota}>
+                        {currentNota}
+                      </span>
+                      <span className="text-xs text-green-600 dark:text-green-400 font-semibold">Tersimpan</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHapusNota(true);
+                      setNota(null);
+                    }}
+                    className="text-red-500 hover:text-red-700 text-sm font-medium hover:underline"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  {hapusNota && (
+                    <div className="mb-2 text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium">
+                      <span>⚠️ Nota saat ini akan dihapus setelah disimpan.</span>
+                      <button
+                        type="button"
+                        onClick={() => setHapusNota(false)}
+                        className="text-blue-500 hover:text-blue-700 underline text-xs font-normal"
+                      >
+                        Batal Hapus
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    key={notaKey}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error("Ukuran file maksimal 5 MB.");
+                          e.target.value = "";
+                          setNota(null);
+                        } else {
+                          setNota(file);
+                        }
+                      } else {
+                        setNota(null);
+                      }
+                    }}
+                    className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 text-sm"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Format gambar yang didukung: PNG, JPG, JPEG. Ukuran file maksimal 5 MB.
+                  </p>
+                </div>
+              )}
             </div>
             {/* Total Harga Keseluruhan */}
             <div className="pt-6">

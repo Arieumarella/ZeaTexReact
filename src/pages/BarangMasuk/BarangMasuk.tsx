@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
@@ -13,7 +13,7 @@ import {
   TableRow,
   TableCell,
 } from "../../components/ui/table";
-import { getAllSuppliers, Supplier, getTransaksiMasuk, TransaksiItem, deleteTransaksiMasuk } from '../../service/barangMasuk';
+import { getAllSuppliers, Supplier, getTransaksiMasuk, TransaksiItem, deleteTransaksiMasuk, getTransaksiMasukById, updateTransaksiMasuk } from '../../service/barangMasuk';
 
 // Helper function to format date with month name
 const formatDateWithMonth = (dateString: string): string => {
@@ -33,6 +33,146 @@ const calculateTotalPayment = (berjangka: any[]): number => {
 
 export default function BarangMasuk() {
   const navigate = useNavigate();
+  const [notaModalOpen, setNotaModalOpen] = useState(false);
+  const [selectedNota, setSelectedNota] = useState<string | null>(null);
+  const [selectedTransaksi, setSelectedTransaksi] = useState<TransaksiItem | null>(null);
+  const [loadingNotaData, setLoadingNotaData] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const openNotaModal = async (item: TransaksiItem) => {
+    setSelectedNota(item.nota || null);
+    setSelectedTransaksi(null);
+    setSelectedFile(null);
+    setNotaModalOpen(true);
+    setLoadingNotaData(true);
+    try {
+      const fullTx = await getTransaksiMasukById(item.id);
+      if (fullTx) {
+        setSelectedTransaksi(fullTx);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memuat detail transaksi");
+    } finally {
+      setLoadingNotaData(false);
+    }
+  };
+
+  const handleUploadNota = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTransaksi || !selectedFile) return;
+    setUploading(true);
+    try {
+      const payload = {
+        id_supplier: selectedTransaksi.supplier?.id || null,
+        tgl_transaksi: selectedTransaksi.tgl_transaksi ? new Date(selectedTransaksi.tgl_transaksi).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        total_transaksi: Number(selectedTransaksi.total_transaksi) || 0,
+        tipe_discount: selectedTransaksi.tipe_discount || null,
+        jml_discount: Number(selectedTransaksi.jml_discount) || 0,
+        tipe_ppn: selectedTransaksi.tipe_ppn || null,
+        jml_ppn: Number(selectedTransaksi.jml_ppn) || 0,
+        catatan: selectedTransaksi.catatan || null,
+        status_pembayaran: selectedTransaksi.status_pembayaran,
+        tenor: selectedTransaksi.tenor || 1,
+        tanggal_tenor: (selectedTransaksi.berjangka || []).map((b: any) => b.tgl_jatuh_tempo ? new Date(b.tgl_jatuh_tempo).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)),
+        details: (selectedTransaksi.details || []).map((d: any) => ({
+          id_barang: d.id_barang,
+          jml_yard: Number(d.jml_yard) || 0,
+          jml_rol: Number(d.jml_rol) || 0,
+          harga_satuan: Number(d.harga_satuan) || 0,
+        }))
+      };
+      const res = await updateTransaksiMasuk(selectedTransaksi.id, payload, selectedFile, false);
+      if (res && res.status) {
+        toast.success("Nota berhasil diunggah!");
+        setNotaModalOpen(false);
+        setSelectedFile(null);
+        setSelectedTransaksi(null);
+        // Refresh list
+        const params: any = { page };
+        if (suplier) params.supplierId = Number(suplier);
+        if (tanggalStart) params.waktuAwal = tanggalStart;
+        if (tanggalEnd) params.waktuAkhir = tanggalEnd;
+        if (searchKdBarang) params.kdBarang = searchKdBarang;
+        const listRes = await getTransaksiMasuk(params);
+        if (listRes && listRes.data) {
+          setTransactions(listRes.data);
+        }
+      } else {
+        toast.error(res?.message || "Gagal mengunggah nota.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan saat mengunggah nota.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleHapusNota = async () => {
+    if (!selectedTransaksi) return;
+    Swal.fire({
+      title: 'Hapus nota pembayaran?',
+      text: 'Tindakan ini tidak dapat dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setUploading(true);
+        try {
+          const payload = {
+            id_supplier: selectedTransaksi.supplier?.id || null,
+            tgl_transaksi: selectedTransaksi.tgl_transaksi ? new Date(selectedTransaksi.tgl_transaksi).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+            total_transaksi: Number(selectedTransaksi.total_transaksi) || 0,
+            tipe_discount: selectedTransaksi.tipe_discount || null,
+            jml_discount: Number(selectedTransaksi.jml_discount) || 0,
+            tipe_ppn: selectedTransaksi.tipe_ppn || null,
+            jml_ppn: Number(selectedTransaksi.jml_ppn) || 0,
+            catatan: selectedTransaksi.catatan || null,
+            status_pembayaran: selectedTransaksi.status_pembayaran,
+            tenor: selectedTransaksi.tenor || 1,
+            tanggal_tenor: (selectedTransaksi.berjangka || []).map((b: any) => b.tgl_jatuh_tempo ? new Date(b.tgl_jatuh_tempo).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)),
+            details: (selectedTransaksi.details || []).map((d: any) => ({
+              id_barang: d.id_barang,
+              jml_yard: Number(d.jml_yard) || 0,
+              jml_rol: Number(d.jml_rol) || 0,
+              harga_satuan: Number(d.harga_satuan) || 0,
+            }))
+          };
+          const res = await updateTransaksiMasuk(selectedTransaksi.id, payload, null, true);
+          if (res && res.status) {
+            toast.success("Nota berhasil dihapus!");
+            setSelectedNota(null);
+            if (selectedTransaksi) {
+              setSelectedTransaksi({ ...selectedTransaksi, nota: null });
+            }
+            // Refresh list
+            const params: any = { page };
+            if (suplier) params.supplierId = Number(suplier);
+            if (tanggalStart) params.waktuAwal = tanggalStart;
+            if (tanggalEnd) params.waktuAkhir = tanggalEnd;
+            if (searchKdBarang) params.kdBarang = searchKdBarang;
+            const listRes = await getTransaksiMasuk(params);
+            if (listRes && listRes.data) {
+              setTransactions(listRes.data);
+            }
+          } else {
+            toast.error(res?.message || "Gagal menghapus nota.");
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error("Terjadi kesalahan saat menghapus nota.");
+        } finally {
+          setUploading(false);
+        }
+      }
+    });
+  };
 
   const handleDeleteTransaksi = async (id: number, supplierName: string) => {
     Swal.fire({
@@ -308,6 +448,7 @@ export default function BarangMasuk() {
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Total Harga</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Sisa Pembayaran</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Status Pembayaran</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nota</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Penginput/Pengedit Data</TableCell>
                     <TableCell isHeader className="w-48 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
                   </TableRow>
@@ -414,6 +555,24 @@ export default function BarangMasuk() {
                             </div>
                           </div>
                         </TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">
+                          {item.nota ? (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/${item.nota}`}
+                              alt="Nota"
+                              onClick={() => openNotaModal(item)}
+                              className="w-24 h-24 object-cover rounded mx-auto cursor-pointer border border-gray-300 dark:border-gray-600 hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openNotaModal(item)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors border border-blue-100 dark:border-transparent"
+                            >
+                              + Upload Nota
+                            </button>
+                          )}
+                        </TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.penginput?.username || ''}</TableCell>
                         <TableCell className="w-48 px-2 py-2 border text-center">
                           <button className="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded mr-1 hover:bg-blue-600" onClick={() => navigate(`/detail-masuk/${item.id}`)}>Detail</button>
@@ -483,9 +642,210 @@ export default function BarangMasuk() {
               </button>
             </div>
           </div>
-          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />
+          {/* ToastContainer is handled globally in main.tsx */}
         </ComponentCard>
       </div>
+
+      {/* Premium Receipt Modal */}
+      {notaModalOpen && (
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-300"
+          onClick={() => {
+            if (!uploading && !loadingNotaData) {
+              setNotaModalOpen(false);
+              setSelectedTransaksi(null);
+              setSelectedNota(null);
+              setSelectedFile(null);
+            }
+          }}
+        >
+          <div
+            className="relative bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 max-w-2xl w-full transform scale-100 transition-all duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-850/50">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></span>
+                Nota Pembayaran - Transaksi #{selectedTransaksi?.id || ""}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!uploading && !loadingNotaData) {
+                    setNotaModalOpen(false);
+                    setSelectedTransaksi(null);
+                    setSelectedNota(null);
+                    setSelectedFile(null);
+                  }
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors text-xl font-bold"
+                disabled={uploading || loadingNotaData}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 bg-gray-50/30 dark:bg-gray-900/30">
+              {loadingNotaData ? (
+                <div className="py-12 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                  <svg className="animate-spin h-8 w-8 text-blue-600 mb-3" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="text-sm font-medium">Memuat detail transaksi...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Transaction Info Summary */}
+                  {selectedTransaksi && (
+                    <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-850 rounded-xl p-4 text-xs border border-gray-100 dark:border-gray-800">
+                      <div>
+                        <span className="text-gray-400 block mb-0.5">Supplier</span>
+                        <span className="font-semibold text-gray-850 dark:text-white">{selectedTransaksi.supplier?.nama || "-"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block mb-0.5">Tanggal</span>
+                        <span className="font-semibold text-gray-850 dark:text-white">{formatDateWithMonth(selectedTransaksi.tgl_transaksi)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block mb-0.5">Total Belanja</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedTransaksi.total_transaksi)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block mb-0.5">Status Pembayaran</span>
+                        <span className={`font-semibold ${selectedTransaksi.status_pembayaran === "0" ? "text-green-600" : "text-red-500"}`}>
+                          {selectedTransaksi.status_pembayaran === "0" ? "Lunas" : "Pembayaran Berjangka"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Preview / Placeholder */}
+                  {selectedNota ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-semibold text-gray-500 mb-2 self-start flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> Nota Terpasang:
+                      </span>
+                      <div className="relative group w-full bg-gray-100 dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex items-center justify-center p-3 shadow-inner">
+                        <img
+                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/${selectedNota}`}
+                          alt="Nota Pembayaran"
+                          className="max-w-full max-h-[320px] object-contain rounded-lg shadow-sm"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleHapusNota}
+                        disabled={uploading}
+                        className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors border border-red-100 dark:border-transparent disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus Nota
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-gray-950/40 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl py-8 flex flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-gray-400 dark:text-gray-500 mb-2 shadow-inner">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-xs font-semibold text-gray-800 dark:text-white mb-1">Belum Ada Nota Pembayaran</h4>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 max-w-[280px]">Silakan pilih file di bawah ini untuk mengunggah nota baru.</p>
+                    </div>
+                  )}
+
+                  {/* Form Upload */}
+                  <form onSubmit={handleUploadNota} className="space-y-4 border-t pt-4 dark:border-gray-800">
+                    <div>
+                      <label className="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5">
+                        <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        {selectedNota ? "Unggah Nota Baru (Menggantikan)" : "Pilih File Nota"}
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file) {
+                            const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+                            if (!allowedTypes.includes(file.type)) {
+                              toast.error("Format file harus PNG, JPG, atau JPEG.");
+                              e.target.value = "";
+                              setSelectedFile(null);
+                              return;
+                            }
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error("Ukuran file maksimal 5 MB.");
+                              e.target.value = "";
+                              setSelectedFile(null);
+                              return;
+                            }
+                          }
+                          setSelectedFile(file);
+                        }}
+                        className="border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2 w-full dark:bg-gray-955/40 dark:text-white/90 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100 transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      />
+                      <p className="mt-1.5 text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        Format: PNG, JPG, JPEG (Maksimal 5 MB)
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2.5 pt-2 border-t dark:border-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNotaModalOpen(false);
+                          setSelectedTransaksi(null);
+                          setSelectedNota(null);
+                          setSelectedFile(null);
+                        }}
+                        disabled={uploading}
+                        className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-xs transition-colors disabled:opacity-50"
+                      >
+                        Tutup
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={uploading || !selectedFile}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-xl font-medium text-xs transition-all shadow-sm shadow-blue-500/20 disabled:pointer-events-none flex items-center gap-1.5"
+                      >
+                        {uploading ? (
+                          <>
+                            <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            <span>Mengunggah...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Simpan Nota</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

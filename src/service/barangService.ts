@@ -30,7 +30,20 @@ export async function getDetailBarang(id: number): Promise<{ status: boolean; da
   }
 }
 
-export async function updateBarang(id: number, { kd_barang, nama_barang }: { kd_barang?: string; nama_barang: string }): Promise<{ status: boolean; message?: string }> {
+export async function updateBarang(
+  id: number,
+  {
+    kd_barang,
+    nama_barang,
+    foto,
+    hapus_foto,
+  }: {
+    kd_barang?: string;
+    nama_barang: string;
+    foto?: File | null;
+    hapus_foto?: boolean;
+  }
+): Promise<{ status: boolean; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -38,13 +51,22 @@ export async function updateBarang(id: number, { kd_barang, nama_barang }: { kd_
     return { status: false, message: 'Token tidak ditemukan' };
   }
   try {
+    const formData = new FormData();
+    if (kd_barang !== undefined) formData.append('kd_barang', kd_barang);
+    formData.append('nama_barang', nama_barang);
+    if (foto) {
+      formData.append('foto', foto);
+    }
+    if (hapus_foto) {
+      formData.append('hapus_foto', 'true');
+    }
+
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ kd_barang, nama_barang }),
+      body: formData,
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -62,7 +84,15 @@ export async function updateBarang(id: number, { kd_barang, nama_barang }: { kd_
   }
 }
 
-export async function createBarang({ kd_barang, nama_barang }: { kd_barang?: string; nama_barang: string }): Promise<{ status: boolean; message?: string }> {
+export async function createBarang({
+  kd_barang,
+  nama_barang,
+  foto,
+}: {
+  kd_barang?: string;
+  nama_barang: string;
+  foto?: File | null;
+}): Promise<{ status: boolean; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -70,13 +100,19 @@ export async function createBarang({ kd_barang, nama_barang }: { kd_barang?: str
     return { status: false, message: 'Token tidak ditemukan' };
   }
   try {
+    const formData = new FormData();
+    if (kd_barang !== undefined) formData.append('kd_barang', kd_barang);
+    formData.append('nama_barang', nama_barang);
+    if (foto) {
+      formData.append('foto', foto);
+    }
+
     const response = await fetch(API_BASE + '/barang', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ kd_barang, nama_barang }),
+      body: formData,
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -99,6 +135,7 @@ export interface Barang {
   id: number;
   kd_barang: string;
   nama_barang: string;
+  foto?: string;
 }
 
 export async function getBarang(page: number = 1, search: string = ""): Promise<{ status: boolean; data?: Barang[]; totalPages?: number; message?: string }> {

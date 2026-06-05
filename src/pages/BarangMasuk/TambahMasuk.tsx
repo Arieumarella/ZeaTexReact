@@ -31,6 +31,10 @@ export default function TambahMasuk() {
   const [tenor, setTenor] = useState(1); // default 1x cicilan
   const [tanggalTenor, setTanggalTenor] = useState<string[]>([""]);
 
+  // State for nota upload
+  const [nota, setNota] = useState<File | null>(null);
+  const [notaKey, setNotaKey] = useState(Date.now());
+
   // Hitung total harga barang
   const totalBarang = barangList.reduce((sum, barang) => {
     return sum + (Number(barang.jumlahYard) * Number(barang.hargaSatuan));
@@ -88,7 +92,7 @@ export default function TambahMasuk() {
         }))
       };
       console.log('POST payload:', JSON.stringify(payload, null, 2));
-      const data = await createTransaksiMasuk(payload);
+      const data = await createTransaksiMasuk(payload, nota);
       if (!data || !data.status) {
         if (data && data.message === 'Invalid token') window.location.replace('/');
         toast.error(data?.message || 'Gagal menyimpan data.');
@@ -111,6 +115,8 @@ export default function TambahMasuk() {
       setPpnType("persen");
       setPpnValue(0);
       setCatatan("");
+      setNota(null);
+      setNotaKey(Date.now());
 
     } catch (err) {
       console.error(err);
@@ -422,6 +428,33 @@ export default function TambahMasuk() {
             <div className="pt-6">
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Catatan (Opsional)</label>
               <textarea className="border rounded px-3 py-2 w-full min-h-[80px] dark:bg-gray-900 dark:text-white/90" placeholder="Catatan tambahan..." value={catatan} onChange={e => setCatatan(e.target.value)} />
+            </div>
+            {/* Nota Pembayaran */}
+            <div className="pt-6">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Nota Pembayaran (Opsional)</label>
+              <input
+                key={notaKey}
+                type="file"
+                accept="image/png, image/jpeg, image/jpg"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error("Ukuran file maksimal 5 MB.");
+                      e.target.value = "";
+                      setNota(null);
+                    } else {
+                      setNota(file);
+                    }
+                  } else {
+                    setNota(null);
+                  }
+                }}
+                className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90 text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Format gambar yang didukung: PNG, JPG, JPEG. Ukuran file maksimal 5 MB.
+              </p>
             </div>
             {/* Total Harga Keseluruhan */}
             <div className="pt-6">

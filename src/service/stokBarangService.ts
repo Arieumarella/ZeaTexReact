@@ -9,6 +9,7 @@ export interface StokBarang {
   jml_rol: number;
   tot_yard_terjual?: number;
   tot_rol_terjual?: number;
+  foto?: string;
   created_at: string;
   updated_at: string;
 }
