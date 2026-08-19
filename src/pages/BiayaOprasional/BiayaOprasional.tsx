@@ -45,24 +45,9 @@ export default function BiayaOprasional() {
   // Filter tanggal rentang
   useEffect(() => {
     setLoading(true);
-    getOprasional(page, search).then(res => {
+    getOprasional(page, search, false, tanggalStart, tanggalEnd).then(res => {
       if (res && res.status && res.data) {
-        let filtered = res.data;
-        // Filter tanggal
-        if (tanggalStart || tanggalEnd) {
-          filtered = filtered.filter(item => {
-            const tgl = (item.tanggal || item.created_at).slice(0, 10);
-            if (tanggalStart && tanggalEnd) {
-              return tgl >= tanggalStart && tgl <= tanggalEnd;
-            } else if (tanggalStart) {
-              return tgl >= tanggalStart;
-            } else if (tanggalEnd) {
-              return tgl <= tanggalEnd;
-            }
-            return true;
-          });
-        }
-        setData(filtered);
+        setData(res.data);
         const tp = res.totalPages || 1;
         setTotalPages(tp);
         if (page > tp && tp >= 1) {
@@ -93,7 +78,7 @@ export default function BiayaOprasional() {
         if (res.status) {
           // Refresh data
           setLoading(true);
-          getOprasional(page).then(res => {
+          getOprasional(page, search, false, tanggalStart, tanggalEnd).then(res => {
             if (res && res.status && res.data) {
               setData(res.data);
               const tp = res.totalPages || 1;
@@ -114,22 +99,9 @@ export default function BiayaOprasional() {
 
   const handleExportExcel = async () => {
     try {
-      const res = await getOprasional(1, search, true);
+      const res = await getOprasional(1, search, true, tanggalStart, tanggalEnd);
       if (res && res.status && res.data) {
         let exportData = res.data;
-        if (tanggalStart || tanggalEnd) {
-          exportData = exportData.filter(item => {
-            const tgl = (item.tanggal || item.created_at).slice(0, 10);
-            if (tanggalStart && tanggalEnd) {
-              return tgl >= tanggalStart && tgl <= tanggalEnd;
-            } else if (tanggalStart) {
-              return tgl >= tanggalStart;
-            } else if (tanggalEnd) {
-              return tgl <= tanggalEnd;
-            }
-            return true;
-          });
-        }
         const ws = XLSX.utils.json_to_sheet(exportData.map((item, idx) => ({
           No: idx + 1,
           "Nama Biaya": item.nama_baya,
@@ -182,7 +154,7 @@ export default function BiayaOprasional() {
             <input
               type="date"
               value={tanggalStart}
-              onChange={e => setTanggalStart(e.target.value)}
+              onChange={e => { setTanggalStart(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Awal"
             />
@@ -190,7 +162,7 @@ export default function BiayaOprasional() {
             <input
               type="date"
               value={tanggalEnd}
-              onChange={e => setTanggalEnd(e.target.value)}
+              onChange={e => { setTanggalEnd(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Akhir"
             />

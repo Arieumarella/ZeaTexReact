@@ -18,7 +18,16 @@ export interface Oprasional {
   user?: { username: string };
 }
 
-export async function getOprasional(page: number = 1, search: string = "", all: boolean = false): Promise<{ status: boolean; data?: Oprasional[]; totalPages?: number; message?: string }> {
+
+
+
+export async function getOprasional(
+  page: number = 1,
+  search: string = "",
+  all: boolean = false,
+  waktuAwal: string = "",
+  waktuAkhir: string = ""
+): Promise<{ status: boolean; data?: Oprasional[]; totalPages?: number; message?: string }> {
   const token = localStorage.getItem('auth_token');
   if (!token) {
     toast.error('Token tidak ditemukan, silakan login ulang.');
@@ -33,6 +42,8 @@ export async function getOprasional(page: number = 1, search: string = "", all: 
       params.append('page', String(page));
     }
     if (search) params.append('search', search);
+    if (waktuAwal) params.append('waktuAwal', waktuAwal);
+    if (waktuAkhir) params.append('waktuAkhir', waktuAkhir);
     const response = await fetch(`${API_BASE}/oprasional?${params.toString()}`, {
       method: 'GET',
       headers: {
