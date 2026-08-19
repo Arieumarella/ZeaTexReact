@@ -1370,9 +1370,9 @@ export default function BarangKeluar() {
 
           const detailAngsuranStr = item.status_pembayaran === "1" && item.berjangka && item.berjangka.length > 0
             ? item.berjangka
-                .sort((a: any, b: any) => a.id - b.id)
-                .map((tenor: any, tIdx: number) => `Angsuran ${tIdx + 1}: Rp ${Number(tenor.jml_bayar || 0).toLocaleString()} (Jatuh Tempo: ${formatDateWithMonth(tenor.tgl_jatuh_tempo)})`)
-                .join("; ")
+              .sort((a: any, b: any) => a.id - b.id)
+              .map((tenor: any, tIdx: number) => `Angsuran ${tIdx + 1}: Rp ${Number(tenor.jml_bayar || 0).toLocaleString()} (Jatuh Tempo: ${formatDateWithMonth(tenor.tgl_jatuh_tempo)})`)
+              .join("; ")
             : "-";
 
           const details = item.details || [];
@@ -1706,10 +1706,10 @@ export default function BarangKeluar() {
               />
               {showCustomerDropdown && (
                 <ul className="absolute z-40 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm">
-                  <li className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onMouseDown={() => { setCustomer(''); setSelectedCustomerName(''); setCustomerQuery(''); setShowCustomerDropdown(false); }}>Semua Customer</li>
+                  <li className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onMouseDown={() => { setCustomer(''); setSelectedCustomerName(''); setCustomerQuery(''); setShowCustomerDropdown(false); setPage(1); }}>Semua Customer</li>
                   {customers.filter(s => s.nama.toLowerCase().includes((customerQuery || selectedCustomerName).toLowerCase())).map(s => (
                     <li key={s.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
-                      onMouseDown={() => { setCustomer(String(s.id)); setSelectedCustomerName(s.nama); setCustomerQuery(''); setShowCustomerDropdown(false); }}
+                      onMouseDown={() => { setCustomer(String(s.id)); setSelectedCustomerName(s.nama); setCustomerQuery(''); setShowCustomerDropdown(false); setPage(1); }}
                     >
                       <span className="truncate">{s.nama}</span>
                       <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{s.no_tlp}</span>
@@ -1722,7 +1722,7 @@ export default function BarangKeluar() {
             <input
               type="date"
               value={tanggalStart}
-              onChange={e => setTanggalStart(e.target.value)}
+              onChange={e => { setTanggalStart(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Awal"
             />
@@ -1730,7 +1730,7 @@ export default function BarangKeluar() {
             <input
               type="date"
               value={tanggalEnd}
-              onChange={e => setTanggalEnd(e.target.value)}
+              onChange={e => { setTanggalEnd(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Akhir"
             />

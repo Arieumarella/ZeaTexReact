@@ -406,10 +406,10 @@ export default function BarangMasuk() {
               />
               {showSupplierDropdown && (
                 <ul className="absolute z-40 w-full max-h-48 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 mt-1 rounded shadow-sm">
-                  <li className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onMouseDown={() => { setSuplier(''); setSelectedSupplierName(''); setSupplierQuery(''); setShowSupplierDropdown(false); }}>Semua Suplayer</li>
+                  <li className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onMouseDown={() => { setSuplier(''); setSelectedSupplierName(''); setSupplierQuery(''); setShowSupplierDropdown(false); setPage(1); }}>Semua Suplayer</li>
                   {suppliers.filter(s => s.nama.toLowerCase().includes((supplierQuery || selectedSupplierName).toLowerCase())).map(s => (
                     <li key={s.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-gray-700 dark:text-gray-100 flex justify-between items-center"
-                      onMouseDown={() => { setSuplier(String(s.id)); setSelectedSupplierName(s.nama); setSupplierQuery(''); setShowSupplierDropdown(false); }}
+                      onMouseDown={() => { setSuplier(String(s.id)); setSelectedSupplierName(s.nama); setSupplierQuery(''); setShowSupplierDropdown(false); setPage(1); }}
                     >
                       <span className="truncate">{s.nama}</span>
                       <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{s.no_tlp}</span>
@@ -422,7 +422,7 @@ export default function BarangMasuk() {
             <input
               type="date"
               value={tanggalStart}
-              onChange={e => setTanggalStart(e.target.value)}
+              onChange={e => { setTanggalStart(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Awal"
             />
@@ -430,7 +430,7 @@ export default function BarangMasuk() {
             <input
               type="date"
               value={tanggalEnd}
-              onChange={e => setTanggalEnd(e.target.value)}
+              onChange={e => { setTanggalEnd(e.target.value); setPage(1); }}
               className="border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:text-white/90"
               placeholder="Tanggal Akhir"
             />
