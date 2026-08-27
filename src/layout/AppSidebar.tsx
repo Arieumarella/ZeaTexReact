@@ -74,12 +74,16 @@ const navItems: NavItem[] = [
     name: "Assets Management",
     icon: <ListIcon />,
     subItems: [
+      { name: "Manajemen Toko", path: "/manajemen-toko", relatedPaths: ["/manajemen-toko"], pro: false },
       { name: "Manajemen User", path: "/manajemen-user", relatedPaths: ["/tambah-manajemen-user", "/edit-manajemen-user"], pro: false },
       { name: "Manajemen Pelanggan", path: "/manajemen-pelanggan", relatedPaths: ["/tambah-manajemen-pelanggan", "/edit-manajemen-pelanggan"], pro: false },
       { name: "Manajemen Supplier", path: "/manajemen-supplier", relatedPaths: ["/tambah-manajemen-supplier", "/edit-manajemen-supplier"], pro: false },
       { name: "Manajemen List barang", path: "/manajemen-list-barang", relatedPaths: ["/tambah-manajemen-list-barang", "/edit-manajemen-list-barang"], pro: false },
+      { name: "Log Aktivitas", path: "/log-aktivitas", relatedPaths: ["/log-aktivitas"], pro: false },
     ],
   },
+
+
 
 
 ];

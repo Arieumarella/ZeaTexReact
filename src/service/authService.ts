@@ -1,7 +1,7 @@
 // src/service/authService.ts
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_BASE } from './apiHelper';
 
-export async function login(username: string, password: string): Promise<{ status: boolean; token?: string; message?: string }> {
+export async function login(username: string, password: string): Promise<{ status: boolean; token?: string; role?: string; id_toko?: number; message?: string }> {
   try {
     const response = await fetch(API_BASE + '/auth/login', {
       method: 'POST',
@@ -12,11 +12,22 @@ export async function login(username: string, password: string): Promise<{ statu
     });
     const data = await response.json();
     if (data.status && data.token) {
-      // Simpan token di localStorage (bisa diganti ke sessionStorage atau cookie sesuai kebutuhan)
       localStorage.setItem('auth_token', data.token);
       if (data.nama) localStorage.setItem("auth_nama", data.nama);
       if (data.jabatan) localStorage.setItem("auth_jabatan", data.jabatan);
-      return { status: true, token: data.token };
+      if (data.role) localStorage.setItem("auth_role", data.role);
+      
+      const tokoId = data.id_toko || 1;
+      localStorage.setItem("active_toko_id", String(tokoId));
+      if (data.nama_toko) localStorage.setItem("active_toko_nama", data.nama_toko);
+
+      if (data.stores) {
+        localStorage.setItem("auth_stores", JSON.stringify(data.stores));
+      } else {
+        localStorage.removeItem("auth_stores");
+      }
+
+      return { status: true, token: data.token, role: data.role, id_toko: tokoId };
     } else {
       return { status: false, message: data.message || 'Login gagal' };
     }
@@ -24,3 +35,4 @@ export async function login(username: string, password: string): Promise<{ statu
     return { status: false, message: 'Network error' };
   }
 }
+

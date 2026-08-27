@@ -1,5 +1,5 @@
+import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface Supplier {
   id: number;
@@ -10,20 +10,10 @@ export interface Supplier {
 }
 
 export async function getAllSuppliers(): Promise<Supplier[] | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(API_BASE + '/supplier/all', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -49,20 +39,10 @@ export interface Barang {
 }
 
 export async function getAllBarang(): Promise<Barang[] | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(API_BASE + '/barang/all', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -103,13 +83,6 @@ export interface CreateTransaksiPayload {
 }
 
 export async function createTransaksiMasuk(payload: any, notaFile: File | null = null): Promise<any> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const formData = new FormData();
     for (const key in payload) {
@@ -127,9 +100,7 @@ export async function createTransaksiMasuk(payload: any, notaFile: File | null =
 
     const res = await fetch(API_BASE + '/transaksi-masuk', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeaders(true),
       body: formData
     });
     const data = await res.json();
@@ -169,7 +140,6 @@ export interface TransaksiItem {
     harga_satuan: number;
     created_at: string;
     updated_at: string;
-    // Optional fields yang bisa tidak ada dari API
     kode_barang?: string;
     nama_barang?: string;
   }>;
@@ -187,8 +157,8 @@ export interface TransaksiItem {
 export interface GetTransaksiParams {
   page?: number;
   supplierId?: number;
-  waktuAwal?: string; // YYYY-MM-DD
-  waktuAkhir?: string; // YYYY-MM-DD
+  waktuAwal?: string;
+  waktuAkhir?: string;
   all?: boolean;
   kdBarang?: string;
 }
@@ -200,13 +170,6 @@ export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promis
   total?: number;
   totalPages?: number;
 } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   const qs = new URLSearchParams();
   if (params.all) {
     qs.set('all', 'true');
@@ -222,10 +185,7 @@ export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promis
   try {
     const res = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -242,20 +202,10 @@ export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promis
 }
 
 export async function getTransaksiMasukById(id: number): Promise<TransaksiItem | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(`${API_BASE}/transaksi-masuk/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(),
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -277,13 +227,6 @@ export async function updateTransaksiMasuk(
   notaFile: File | null = null,
   hapusNota: boolean = false
 ): Promise<{ status: boolean; message: string; data?: any } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const formData = new FormData();
     for (const key in payload) {
@@ -304,9 +247,7 @@ export async function updateTransaksiMasuk(
 
     const res = await fetch(`${API_BASE}/transaksi-masuk/${id}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeaders(true),
       body: formData
     });
     const data = await res.json();
@@ -334,38 +275,22 @@ export async function updateBerjangkaMasuk(
   transaksiId: number,
   payload: UpdateBerjangkaPayload
 ): Promise<{ status: boolean; message: string; data?: any } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(`${API_BASE}/berjangka-masuk-cicil/${transaksiId}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    console.log('Response:', res.status, data);
-
     if (!res.ok) {
-      console.error('Error response:', data);
       toast.error(data.message || 'Gagal memperbarui cicilan.');
       if (data.message === 'Invalid token') window.location.replace('/');
       return data;
     }
 
     if (data.status) {
-      console.log('Success:', data.message);
-      // Toast akan ditampilkan di component, jadi tidak perlu di sini
       return data;
     } else {
-      console.error('Status false:', data);
       toast.error(data.message || 'Gagal memperbarui cicilan.');
       return data;
     }
@@ -377,20 +302,10 @@ export async function updateBerjangkaMasuk(
 }
 
 export async function deleteTransaksiMasuk(id: number): Promise<{ status: boolean; message: string } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE}/transaksi-masuk/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
 
     const contentType = response.headers.get('content-type');
@@ -405,7 +320,6 @@ export async function deleteTransaksiMasuk(id: number): Promise<{ status: boolea
 
     const data = JSON.parse(text);
 
-    // Handle semua status response (200, 400, 404, 500 dll)
     if (data.status) {
       toast.success(data.message || 'Transaksi berhasil dihapus');
     } else {
@@ -432,20 +346,10 @@ export interface CreateReturPayload {
 }
 
 export async function createRetur(transaksiId: number, payload: CreateReturPayload): Promise<{ status: boolean; message: string; data?: any } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(`${API_BASE}/transaksi-masuk/${transaksiId}/retur`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
 
@@ -468,3 +372,4 @@ export async function createRetur(transaksiId: number, payload: CreateReturPaylo
     return null;
   }
 }
+

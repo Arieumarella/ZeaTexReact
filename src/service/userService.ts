@@ -1,9 +1,11 @@
+import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface User {
   id: number;
+  id_toko?: number;
+  nama_toko?: string;
+  role?: string;
   username: string;
   nama: string;
   jabatan: string;
@@ -11,6 +13,7 @@ export interface User {
   created_at: string;
   updated_at: string;
 }
+
 
 export interface UserListResponse {
   status: boolean;
@@ -28,26 +31,19 @@ export interface UserDetailResponse {
 
 export interface UpdateUserPayload {
   username: string;
-  password: string;
+  password?: string;
   nama: string;
   jabatan: string;
   no_tlp: string;
+  id_toko?: number;
+  role?: string;
 }
 
 export async function deleteUser(id: number): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/users/${id}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -67,19 +63,10 @@ export async function deleteUser(id: number): Promise<{ status: boolean; message
 }
 
 export async function createUser(payload: UpdateUserPayload): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/users`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -100,19 +87,10 @@ export async function createUser(payload: UpdateUserPayload): Promise<{ status: 
 }
 
 export async function updateUser(id: number, payload: UpdateUserPayload): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/users/${id}`, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -133,19 +111,10 @@ export async function updateUser(id: number, payload: UpdateUserPayload): Promis
 }
 
 export async function getUserDetail(id: number): Promise<UserDetailResponse | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
   try {
     const response = await fetch(`${API_BASE}/users/${id}`, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     if (!response.ok) {
       toast.error('Gagal mengambil data user detail.');
@@ -171,18 +140,10 @@ export async function getUserDetail(id: number): Promise<UserDetailResponse | nu
 }
 
 export async function getUsers(page: number = 1): Promise<UserListResponse | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    window.location.replace('/');
-    return null;
-  }
   try {
     const response = await fetch(`${API_BASE}/users?page=${page}`, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     if (!response.ok) {
       window.location.replace('/');
@@ -199,4 +160,5 @@ export async function getUsers(page: number = 1): Promise<UserListResponse | nul
     return null;
   }
 }
+
 

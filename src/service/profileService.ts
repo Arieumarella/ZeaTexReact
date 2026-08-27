@@ -1,5 +1,5 @@
+import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface ProfileData {
   id: number;
@@ -16,20 +16,10 @@ export interface ProfileData {
 }
 
 export async function getProfile(): Promise<ProfileData | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(API_BASE + '/profile', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok || !data.status) {
@@ -46,20 +36,10 @@ export async function getProfile(): Promise<ProfileData | null> {
 }
 
 export async function updateProfile(payload: Partial<ProfileData>): Promise<{ status: boolean; message: string; data?: ProfileData } | null> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return null;
-  }
-
   try {
     const res = await fetch(API_BASE + '/profile', {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
 
@@ -77,3 +57,4 @@ export async function updateProfile(payload: Partial<ProfileData>): Promise<{ st
     return null;
   }
 }
+

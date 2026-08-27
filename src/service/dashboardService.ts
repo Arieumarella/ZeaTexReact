@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
 
 interface SaldoData {
@@ -42,23 +42,39 @@ interface ChartDataItem {
   belum_dibayar: number;
 }
 
+export interface JatuhTempoTransaksi {
+  id: number;
+  nomorTransaksi: string;
+  pelanggan: string;
+  totalHarga: number;
+  hariHitung: number;
+  status?: string;
+  tanggalJatuhTempo?: string;
+}
+
+export interface JatuhTempoResponse {
+  status: boolean;
+  datatransaksiKeluar: JatuhTempoTransaksi[];
+  datatransaksiMasuk: JatuhTempoTransaksi[];
+}
+
+export interface TopCustomerData {
+  nama: string;
+  pembelian: number;
+  totalNilai: number;
+}
+
+export interface OperationalCostData {
+  kategori: string;
+  jumlah: number;
+}
+
 // Get Saldo Perusahaan
 export const getSaldoPerusahaan = async (): Promise<SaldoData | null> => {
-  const token = localStorage.getItem("auth_token");
-
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE}/dashboard/get-saldo`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
 
     const result: ApiResponse<SaldoData> = await response.json();
@@ -79,23 +95,12 @@ export const getSaldoPerusahaan = async (): Promise<SaldoData | null> => {
   }
 };
 
-// Get Transaksi Penjualan (Transaksi Masuk)
+// Get Transaksi Penjualan
 export const getTransaksiPenjualan = async (): Promise<TransaksiPenjualanData | null> => {
-  const token = localStorage.getItem("auth_token");
-
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE}/dashboard/get-transaksi-penjualan`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
 
     const result: ApiResponse<TransaksiPenjualanData> = await response.json();
@@ -116,23 +121,12 @@ export const getTransaksiPenjualan = async (): Promise<TransaksiPenjualanData | 
   }
 };
 
-// Get Transaksi Pembelian (Transaksi Keluar)
+// Get Transaksi Pembelian
 export const getTransaksiPembelian = async (): Promise<TransaksiPembelianData | null> => {
-  const token = localStorage.getItem("auth_token");
-
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE}/dashboard/get-transaksi-pembelian`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
 
     const result: ApiResponse<TransaksiPembelianData> = await response.json();
@@ -155,19 +149,10 @@ export const getTransaksiPembelian = async (): Promise<TransaksiPembelianData | 
 
 // Get Total Stok Barang
 export const getTotalStokBarang = async (): Promise<TotalStokBarangData | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const response = await fetch(`${API_BASE}/dashboard/get-total-stok-barang`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: ApiResponse<TotalStokBarangData> = await response.json();
     if (!response.ok || !result.status) {
@@ -187,20 +172,11 @@ export const getTotalStokBarang = async (): Promise<TotalStokBarangData | null> 
 
 // Get Top Selling Items
 export const getTopSellingItems = async (dari: string, sampai: string): Promise<TopSellingItem[] | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const params = new URLSearchParams({ dari, sampai });
     const response = await fetch(`${API_BASE}/dashboard/get-paling-laku?${params.toString()}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: ApiResponse<TopSellingItem[]> = await response.json();
     if (!response.ok || !result.status) {
@@ -220,19 +196,10 @@ export const getTopSellingItems = async (dari: string, sampai: string): Promise<
 
 // Get Chart Penjualan
 export const getChartPenjualan = async (filter: string): Promise<ChartDataItem[] | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const response = await fetch(`${API_BASE}/dashboard/getChartPenjualan?filter=${filter}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: ApiResponse<ChartDataItem[]> = await response.json();
     if (!response.ok || !result.status) {
@@ -250,39 +217,12 @@ export const getChartPenjualan = async (filter: string): Promise<ChartDataItem[]
   }
 };
 
-// TODO: Add more dashboard-related API calls below
-// Example: getTransaksiKeluar, getStokBarang, etc.
 // Get Jatuh Tempo Piutang
-export interface JatuhTempoTransaksi {
-  id: number;
-  nomorTransaksi: string;
-  pelanggan: string;
-  totalHarga: number;
-  hariHitung: number;
-  status?: string;
-  tanggalJatuhTempo?: string;
-}
-
-export interface JatuhTempoResponse {
-  status: boolean;
-  datatransaksiKeluar: JatuhTempoTransaksi[];
-  datatransaksiMasuk: JatuhTempoTransaksi[];
-}
-
 export const getJatuhTempoPiutang = async (): Promise<JatuhTempoResponse | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const response = await fetch(`${API_BASE}/dashboard/getJatuhTempoPiutang`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: JatuhTempoResponse = await response.json();
     if (!response.ok || !result.status) {
@@ -295,28 +235,14 @@ export const getJatuhTempoPiutang = async (): Promise<JatuhTempoResponse | null>
     return null;
   }
 };
-// Get Data Pelanggan
-export interface TopCustomerData {
-  nama: string;
-  pembelian: number;
-  totalNilai: number;
-}
 
+// Get Data Pelanggan
 export const getDataPelanggan = async (dari: string, sampai: string): Promise<TopCustomerData[] | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const params = new URLSearchParams({ dari, sampai });
     const response = await fetch(`${API_BASE}/dashboard/getDataPelanggan?${params.toString()}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: ApiResponse<TopCustomerData[]> = await response.json();
     if (!response.ok || !result.status) {
@@ -333,27 +259,14 @@ export const getDataPelanggan = async (dari: string, sampai: string): Promise<To
     return null;
   }
 };
-// Get Data Oprasional
-export interface OperationalCostData {
-  kategori: string;
-  jumlah: number;
-}
 
+// Get Data Oprasional
 export const getDataOprasional = async (dari: string, sampai: string): Promise<OperationalCostData[] | null> => {
-  const token = localStorage.getItem("auth_token");
-  if (!token) {
-    toast.error("Token tidak ditemukan, silakan login ulang.");
-    window.location.replace("/");
-    return null;
-  }
   try {
     const params = new URLSearchParams({ dari, sampai });
     const response = await fetch(`${API_BASE}/dashboard/getDataOprasional?${params.toString()}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
     const result: ApiResponse<OperationalCostData[]> = await response.json();
     if (!response.ok || !result.status) {
@@ -370,3 +283,4 @@ export const getDataOprasional = async (dari: string, sampai: string): Promise<O
     return null;
   }
 };
+

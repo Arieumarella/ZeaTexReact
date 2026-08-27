@@ -57,10 +57,18 @@ import EditManajemenListBarang from "./pages/Manajemen/EditManajemenListBarang";
 {/* Input Cicilan */}
 import InputCicilan from "./pages/BarangMasuk/InputCicilan";
 import InputCicilanKeluar from "./pages/BarangKeluar/InputCicilanKeluar";
+{/* Profile Toko */}
+import Profile from "./pages/Profile/Profile";
 {/* konfigurasi WhatsApp */}
 import KonfigWA from "./pages/konfigWA/Wa";
-{/* Profile */}
-import Profile from "./pages/Profile/Profile";
+{/* Manajemen Toko */}
+import ManajemenToko from "./pages/Manajemen/ManajemenToko";
+{/* Log Aktivitas */}
+import LogAktivitas from "./pages/LogAktivitas/LogAktivitas";
+
+
+
+
 
 
 export default function App() {
@@ -117,16 +125,21 @@ export default function App() {
             <Route path="/manajemen-list-barang" element={<ManajemenListBarang />} />
             <Route path="/tambah-manajemen-list-barang" element={<TambahManajemenListBarang />} />
             <Route path="/edit-manajemen-list-barang/:id" element={<EditManajemenListBarang />} />
-            {/* konfigurasi WhatsApp */}
-            <Route path="/konfigurasi-whatsapp" element={<KonfigWA />} />
-            {/* Profile */}
+            {/* Profile Toko */}
             <Route path="/profile" element={<Profile />} />
+            {/* Konfigurasi WhatsApp */}
+            <Route path="/konfigurasi-whatsapp" element={<KonfigWA />} />
+            {/* Manajemen Toko */}
+            <Route path="/manajemen-toko" element={<ManajemenToko />} />
+            {/* Log Aktivitas */}
+            <Route path="/log-aktivitas" element={<LogAktivitas />} />
 
 
 
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/user-profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
+
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}

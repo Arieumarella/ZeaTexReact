@@ -24,6 +24,14 @@ export default function ManajemenUser() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const userRole = localStorage.getItem("auth_role") || "ADMIN_TOKO";
+  const userJabatan = (localStorage.getItem("auth_jabatan") || "").toLowerCase();
+  const isSuperAdmin =
+    userRole === "SUPER_ADMIN" ||
+    userJabatan.includes("owner") ||
+    userJabatan.includes("pemilik");
+
+
   useEffect(() => {
     setLoading(true);
     getUsers(page)
@@ -75,6 +83,8 @@ export default function ManajemenUser() {
                     <TableCell isHeader className="w-12 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">No</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nama</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Username</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Toko Cabang</TableCell>
+                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Role Hak Akses</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nomor Telepon</TableCell>
                     <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Jabatan</TableCell>
                     <TableCell isHeader className="w-48 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
@@ -84,64 +94,98 @@ export default function ManajemenUser() {
                   {loading ? (
                     <TableRow>
                       <TableCell className="text-center py-4 dark:text-gray-400">
-                        <td colSpan={6} className="text-center py-4 dark:text-gray-400">Loading...</td>
+                        <td colSpan={8} className="text-center py-4 dark:text-gray-400">Loading...</td>
                       </TableCell>
                     </TableRow>
                   ) : error ? (
                     <TableRow>
                       <TableCell className="text-center py-4 dark:text-gray-400">
-                        <td colSpan={6} className="text-center py-4 dark:text-gray-400">{error}</td>
+                        <td colSpan={8} className="text-center py-4 dark:text-gray-400">{error}</td>
                       </TableCell>
                     </TableRow>
                   ) : data.length === 0 ? (
                     <TableRow>
                       <TableCell className="text-center py-4 dark:text-gray-400">
-                        <td colSpan={6} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
+                        <td colSpan={8} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
                       </TableCell>
                     </TableRow>
                   ) : (
                     data.map((item, idx) => (
                       <TableRow key={item.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{idx + 1 + (page - 1) * (data.length)}</TableCell>
-                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.nama}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90 font-medium">{item.nama}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.username}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center font-semibold text-blue-600 dark:text-blue-400">
+                          {item.nama_toko || `Toko #${item.id_toko || 1}`}
+                        </TableCell>
+                        <TableCell className="px-4 py-2 border text-center">
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            item.role === 'SUPER_ADMIN' 
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          }`}>
+                            {item.role || 'ADMIN_TOKO'}
+                          </span>
+                        </TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.no_tlp}</TableCell>
                         <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.jabatan}</TableCell>
                         <TableCell className="w-48 px-2 py-2 border text-center">
+
                           <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600" onClick={() => navigate(`/edit-manajemen-user/${item.id}`)}>Edit</button>
-                          <button
-                            className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                            onClick={async () => {
-                              const result = await Swal.fire({
-                                title: 'Yakin hapus user?',
-                                text: 'Data user yang dihapus tidak dapat dikembalikan!',
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonColor: '#d33',
-                                cancelButtonColor: '#3085d6',
-                                confirmButtonText: 'Ya, hapus!',
-                                cancelButtonText: 'Batal',
-                              });
-                              if (result.isConfirmed) {
-                                const res = await deleteUser(item.id);
-                                if (res.status) {
-                                  // Refresh data setelah hapus
-                                  setLoading(true);
-                                  getUsers(page).then((r) => {
-                                    if (r && r.status) {
-                                      setData(r.data);
-                                      setTotalPages(r.totalPages || 1);
-                                      setError(null);
-                                    } else {
-                                      setData([]);
-                                      setTotalPages(1);
-                                      setError('Gagal mengambil data user');
-                                    }
-                                  }).finally(() => setLoading(false));
+                          {isSuperAdmin ? (
+                            <button
+                              className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                              onClick={async () => {
+                                const result = await Swal.fire({
+                                  title: 'Yakin hapus user?',
+                                  text: 'Data user yang dihapus tidak dapat dikembalikan!',
+                                  icon: 'warning',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#d33',
+                                  cancelButtonColor: '#3085d6',
+                                  confirmButtonText: 'Ya, hapus!',
+                                  cancelButtonText: 'Batal',
+                                });
+                                if (result.isConfirmed) {
+                                  const res = await deleteUser(item.id);
+                                  if (res.status) {
+                                    setLoading(true);
+                                    getUsers(page).then((r) => {
+                                      if (r && r.status) {
+                                        setData(r.data);
+                                        setTotalPages(r.totalPages || 1);
+                                        setError(null);
+                                      } else {
+                                        setData([]);
+                                        setTotalPages(1);
+                                        setError('Gagal mengambil data user');
+                                      }
+                                    }).finally(() => setLoading(false));
+                                  } else {
+                                    toast.error(res.message || 'Gagal menghapus user');
+                                  }
                                 }
-                              }
-                            }}
-                          >Hapus</button>
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          ) : (
+                            <button
+                              className="px-1.5 py-0.5 text-xs bg-gray-400 text-white rounded cursor-not-allowed opacity-60"
+                              title="Hanya Super Admin yang berhak menghapus user"
+                              onClick={() => {
+                                Swal.fire({
+                                  title: 'Akses Ditolak',
+                                  text: 'Hanya Super Admin / Owner yang berhak menghapus data user.',
+                                  icon: 'error',
+                                  confirmButtonColor: '#3085d6',
+                                });
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          )}
+
                         </TableCell>
                       </TableRow>
                     ))

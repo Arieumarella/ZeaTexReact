@@ -1,5 +1,5 @@
+import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface StokBarang {
   id: number;
@@ -27,12 +27,6 @@ export async function getAllStokBarang(
   search: string = "",
   all: boolean = false
 ): Promise<StokBarangResponse> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, data: [], page: 1, total: 0, totalPages: 0 };
-  }
   try {
     const params = new URLSearchParams();
     if (all) {
@@ -41,13 +35,9 @@ export async function getAllStokBarang(
       params.append('page', String(page));
     }
     if (search) params.append('search', search);
-    // use stockBarang endpoint which returns tot_yard_terjual and tot_rol_terjual
     const response = await fetch(`${API_BASE}/barang/stockBarang?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -72,19 +62,10 @@ export async function getAllStokBarang(
 }
 
 export async function getStokBarangById(id: number): Promise<{ status: boolean; data?: StokBarang; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -103,19 +84,10 @@ export async function getStokBarangById(id: number): Promise<{ status: boolean; 
 }
 
 export async function getDetilMasukKeluar(id: number | string): Promise<{ status: boolean; data?: Array<any>; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/detilMasukeluar/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -134,19 +106,10 @@ export async function getDetilMasukKeluar(id: number | string): Promise<{ status
 }
 
 export async function getDetilKeluar(id: number | string): Promise<{ status: boolean; data?: Array<any>; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/detilKeluar/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -165,19 +128,10 @@ export async function getDetilKeluar(id: number | string): Promise<{ status: boo
 }
 
 export async function getDetilMasuk(id: number | string): Promise<{ status: boolean; data?: Array<any>; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/detilMasuk/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -196,19 +150,10 @@ export async function getDetilMasuk(id: number | string): Promise<{ status: bool
 }
 
 export async function getDetilSisa(id: number | string): Promise<{ status: boolean; data?: Array<any>; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/detilSisa/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -232,19 +177,10 @@ export async function createStokBarang(payload: {
   jml_yard: string;
   jml_rol?: number | null;
 }): Promise<{ status: boolean; data?: StokBarang; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(API_BASE + '/barang', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -268,19 +204,10 @@ export async function updateStokBarang(
   id: number,
   payload: { kd_barang?: string; nama_barang?: string; jml_yard?: string; jml_rol?: number | null }
 ): Promise<{ status: boolean; data?: StokBarang; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -301,19 +228,10 @@ export async function updateStokBarang(
 }
 
 export async function deleteStokBarang(id: number): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -331,3 +249,4 @@ export async function deleteStokBarang(id: number): Promise<{ status: boolean; m
     return { status: false, message: 'Terjadi kesalahan jaringan.' };
   }
 }
+

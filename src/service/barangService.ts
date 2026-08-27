@@ -1,19 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_BASE, getAuthHeaders } from './apiHelper';
+import { toast } from 'react-toastify';
+
+export interface Barang {
+  id: number;
+  kd_barang: string;
+  nama_barang: string;
+  foto?: string;
+}
 
 export async function getDetailBarang(id: number): Promise<{ status: boolean; data?: Barang; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -44,12 +43,6 @@ export async function updateBarang(
     hapus_foto?: boolean;
   }
 ): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const formData = new FormData();
     if (kd_barang !== undefined) formData.append('kd_barang', kd_barang);
@@ -63,9 +56,7 @@ export async function updateBarang(
 
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(true),
       body: formData,
     });
     const data = await response.json();
@@ -93,12 +84,6 @@ export async function createBarang({
   nama_barang: string;
   foto?: File | null;
 }): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const formData = new FormData();
     if (kd_barang !== undefined) formData.append('kd_barang', kd_barang);
@@ -109,9 +94,7 @@ export async function createBarang({
 
     const response = await fetch(API_BASE + '/barang', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(true),
       body: formData,
     });
     const data = await response.json();
@@ -129,31 +112,14 @@ export async function createBarang({
     return { status: false, message: 'Terjadi kesalahan jaringan.' };
   }
 }
-import { toast } from 'react-toastify';
-
-export interface Barang {
-  id: number;
-  kd_barang: string;
-  nama_barang: string;
-  foto?: string;
-}
 
 export async function getBarang(page: number = 1, search: string = ""): Promise<{ status: boolean; data?: Barang[]; totalPages?: number; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.append('search', search);
     const response = await fetch(`${API_BASE}/barang?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -171,19 +137,10 @@ export async function getBarang(page: number = 1, search: string = ""): Promise<
 }
 
 export async function deleteBarang(id: number): Promise<{ status: boolean; message?: string }> {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    toast.error('Token tidak ditemukan, silakan login ulang.');
-    window.location.replace('/');
-    return { status: false, message: 'Token tidak ditemukan' };
-  }
   try {
     const response = await fetch(`${API_BASE}/barang/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -200,3 +157,4 @@ export async function deleteBarang(id: number): Promise<{ status: boolean; messa
     return { status: false, message: 'Terjadi kesalahan jaringan.' };
   }
 }
+
