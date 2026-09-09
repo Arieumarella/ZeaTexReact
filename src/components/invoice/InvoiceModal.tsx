@@ -78,9 +78,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       ? formatDate(transaksi.berjangka[0].tgl_jatuh_tempo)
       : formatDate(transaksi.tgl_transaksi);
 
-  // Pad items to at least 7 rows for standard invoice appearance
+  // Pad items to at least 4 rows for clean layout; if there are 4 or more items, no empty padding rows
   const displayRows = [...details];
-  const emptyRowsCount = Math.max(0, 7 - displayRows.length);
+  const emptyRowsCount = Math.max(0, 4 - displayRows.length);
 
   const handleDownloadPdf = async () => {
     if (!invoiceRef.current) return;
@@ -99,11 +99,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        windowWidth: 1200,
         onclone: (clonedDoc: Document) => {
           const printable = clonedDoc.getElementById('printable-invoice');
           if (printable) {
             printable.style.backgroundColor = '#ffffff';
             printable.style.color = '#111827';
+            printable.style.height = 'auto';
+            printable.style.minHeight = '1050px';
+            printable.style.boxShadow = 'none';
           }
         },
       });
@@ -115,10 +119,35 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         format: 'a4',
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const contentHeight = (canvas.height * pageWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      if (contentHeight <= pageHeight) {
+        // Fits within 1 single A4 page perfectly
+        pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, contentHeight);
+      } else if (contentHeight <= pageHeight * 1.35) {
+        // Slightly taller (e.g. 10-16 items): scale proportionally so 100% of invoice fits on 1 page without cutting off signature/bank info
+        const scale = pageHeight / contentHeight;
+        const scaledWidth = pageWidth * scale;
+        const marginX = (pageWidth - scaledWidth) / 2;
+        pdf.addImage(imgData, 'JPEG', marginX, 0, scaledWidth, pageHeight);
+      } else {
+        // Multi-page handling for very long orders
+        let heightLeft = contentHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, contentHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - contentHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, contentHeight);
+          heightLeft -= pageHeight;
+        }
+      }
+
       const filename = `Invoice-${isKeluar ? 'Penjualan' : 'Pembelian'}-ZeaTextile-${transaksi.id || Date.now()}.pdf`;
       pdf.save(filename);
       toast.success('Nota PDF berhasil diunduh!');
@@ -193,22 +222,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         </div>
 
         {/* Scrollable Preview Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-100 dark:bg-gray-950 flex justify-center">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-300 dark:bg-gray-950 flex flex-col items-center">
           {/* Printable Invoice Page (A4 Paper Representation) */}
           <div
             ref={invoiceRef}
             id="printable-invoice"
-            className="bg-white text-gray-900 shadow-xl w-full max-w-[780px] p-8 sm:p-10 relative flex flex-col justify-between"
+            className="bg-white text-gray-900 shadow-2xl w-full max-w-[780px] p-6 sm:p-8 relative flex flex-col justify-between shrink-0"
             style={{
               fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
               minHeight: '1050px',
+              height: 'auto',
+              backgroundColor: '#ffffff',
+              color: '#111827',
               boxSizing: 'border-box',
             }}
           >
             {/* Top Section */}
-            <div>
+            <div className="bg-white">
               {/* Header Banner */}
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-4">
                 {/* Logo Area */}
                 <div className="pt-2">
                   <div className="font-extrabold text-2xl tracking-wider text-gray-800">
@@ -394,8 +426,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             {/* Bottom Signatures & Bank Info */}
-            <div className="mt-8">
-              <div className="flex justify-between items-end pb-8">
+            <div className="mt-6 bg-white pt-2">
+              <div className="flex justify-between items-end pb-6 bg-white">
                 {/* Account Bank */}
                 <div className="text-xs text-gray-800 space-y-1">
                   <div className="font-bold flex items-center gap-2">
@@ -412,7 +444,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
                 {/* Signature Box */}
                 <div className="text-center w-52 text-xs">
-                  <div className="font-bold text-gray-900 mb-14">PT Zea Textile Group</div>
+                  <div className="font-bold text-gray-900 mb-10">PT Zea Textile Group</div>
                   <div className="border-b border-gray-900 mx-6 mb-1"></div>
                   <div className="font-bold text-gray-900">Aji Gumilang</div>
                 </div>
