@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
+import { getStoreProfile } from '../../service/barangKeluarService';
 
 export interface InvoiceModalProps {
   isOpen: boolean;
@@ -17,7 +18,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   storeProfile,
 }) => {
   const [downloading, setDownloading] = useState(false);
+  const [activeProfile, setActiveProfile] = useState<any>(storeProfile || null);
   const invoiceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (storeProfile) {
+      setActiveProfile(storeProfile);
+    } else {
+      getStoreProfile().then((res) => {
+        if (res) setActiveProfile(res);
+      });
+    }
+  }, [storeProfile]);
 
   if (!isOpen || !transaksi) return null;
 
@@ -300,16 +312,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Date, Invoice No, PO Number */}
+                  {/* Date, Invoice No */}
                   <div className="text-xs text-gray-800 mt-3 space-y-1 text-right font-medium">
                     <div>
                       <span className="font-bold">DATE :</span> {formatDate(transaksi.tgl_transaksi)}
                     </div>
                     <div>
                       <span className="font-bold">Invoice No :</span> {transaksi.id}
-                    </div>
-                    <div>
-                      <span className="font-bold">PO Number :</span> {transaksi.catatan || '-'}
                     </div>
                   </div>
                 </div>
@@ -329,15 +338,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Company Name</span>
-                      <span className="font-bold">: {partyName}</span>
+                      <span className="font-bold">: PT Zea Textile Group</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Street Address</span>
-                      <span>: {partyAddress}</span>
+                      <span>: {activeProfile?.alamat || partyAddress || '-'}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Phone</span>
-                      <span>: {partyPhone}</span>
+                      <span>: {activeProfile?.nomor_telepon_1 || partyPhone || '-'}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Email</span>
@@ -469,18 +478,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     <span>Account Bank :</span>
                     <span className="font-extrabold text-sm text-gray-900">PT Zea Textile Group</span>
                   </div>
-                  {storeProfile?.rekening && (
+                  {activeProfile?.rekening && (
                     <div className="text-gray-600 font-medium pl-28">
-                      {storeProfile.nama_rekening ? `${storeProfile.nama_rekening} - ` : ''}
-                      {storeProfile.rekening}
+                      {activeProfile.nama_rekening ? `${activeProfile.nama_rekening} - ` : ''}
+                      {activeProfile.rekening}
                     </div>
                   )}
                 </div>
 
                 {/* Signature Box */}
                 <div className="text-center w-52 text-xs">
-                  <div className="font-bold text-gray-900 mb-10">PT Zea Textile Group</div>
-                  <div className="border-b border-gray-900 mx-6 mb-1"></div>
+                  <div className="font-bold text-gray-900 mb-12">PT Zea Textile Group</div>
                   <div className="font-bold text-gray-900">Aji Gumilang</div>
                 </div>
               </div>
