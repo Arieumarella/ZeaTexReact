@@ -12,7 +12,8 @@ COPY . .
 # Accept build-time args for Vite env variables and write a .env for Vite to pick up
 ARG VITE_API_URL
 ARG VITE_WHATSAPP_API_URL
-RUN printf "VITE_API_URL=%s\nVITE_WHATSAPP_API_URL=%s\n" "$VITE_API_URL" "$VITE_WHATSAPP_API_URL" > .env
+ARG VITE_APP_ENV
+RUN printf "VITE_API_URL=%s\nVITE_WHATSAPP_API_URL=%s\nVITE_APP_ENV=%s\n" "$VITE_API_URL" "$VITE_WHATSAPP_API_URL" "$VITE_APP_ENV" > .env
 
 # Build the app
 RUN npm run build
