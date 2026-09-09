@@ -82,6 +82,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const displayRows = [...details];
   const emptyRowsCount = Math.max(0, 4 - displayRows.length);
 
+  // Compact padding if there are many items (> 8) so invoice fits neatly
+  const isCompact = displayRows.length > 8;
+  const tableCellPadding = isCompact ? 'py-1.5 px-3' : 'py-2 px-3';
+
   const handleDownloadPdf = async () => {
     if (!invoiceRef.current) return;
     setDownloading(true);
@@ -94,19 +98,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
       const element = invoiceRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2.5,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         windowWidth: 1200,
         onclone: (clonedDoc: Document) => {
+          clonedDoc.documentElement.classList.remove('dark');
+          clonedDoc.body.classList.remove('dark');
           const printable = clonedDoc.getElementById('printable-invoice');
           if (printable) {
             printable.style.backgroundColor = '#ffffff';
             printable.style.color = '#111827';
             printable.style.height = 'auto';
-            printable.style.minHeight = '1050px';
+            printable.style.minHeight = '1123px';
             printable.style.boxShadow = 'none';
           }
         },
@@ -126,8 +132,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       if (contentHeight <= pageHeight) {
         // Fits within 1 single A4 page perfectly
         pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, contentHeight);
-      } else if (contentHeight <= pageHeight * 1.35) {
-        // Slightly taller (e.g. 10-16 items): scale proportionally so 100% of invoice fits on 1 page without cutting off signature/bank info
+      } else if (contentHeight <= pageHeight * 1.4) {
+        // Slightly taller (e.g. 10-18 items): scale proportionally so 100% of invoice fits on 1 page without cutting off signature/bank info
         const scale = pageHeight / contentHeight;
         const scaledWidth = pageWidth * scale;
         const marginX = (pageWidth - scaledWidth) / 2;
@@ -168,6 +174,35 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
+      {/* Print Stylesheet for Direct Browser Printing */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-invoice, #printable-invoice * {
+            visibility: visible !important;
+          }
+          #printable-invoice {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 10mm 12mm !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+            z-index: 9999999 !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+        }
+      `}</style>
+
       <div
         className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[96vh] flex flex-col my-auto overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -222,15 +257,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         </div>
 
         {/* Scrollable Preview Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-300 dark:bg-gray-950 flex flex-col items-center">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-200 dark:bg-gray-950 min-h-0">
           {/* Printable Invoice Page (A4 Paper Representation) */}
           <div
             ref={invoiceRef}
             id="printable-invoice"
-            className="bg-white text-gray-900 shadow-2xl w-full max-w-[780px] p-6 sm:p-8 relative flex flex-col justify-between shrink-0"
+            className="w-full max-w-[794px] mx-auto bg-white text-gray-900 shadow-2xl p-6 sm:p-8 relative flex flex-col justify-between shrink-0"
             style={{
               fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-              minHeight: '1050px',
+              minHeight: '1123px',
               height: 'auto',
               backgroundColor: '#ffffff',
               color: '#111827',
@@ -238,7 +273,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             }}
           >
             {/* Top Section */}
-            <div className="bg-white">
+            <div className="bg-white text-gray-900 flex-1" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
               {/* Header Banner */}
               <div className="flex justify-between items-start mb-4">
                 {/* Logo Area */}
@@ -345,12 +380,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-[#e50914] text-white font-bold">
-                      <th className="py-2 px-3 text-center w-12 border-r border-red-500">Item</th>
-                      <th className="py-2 px-3 text-left border-r border-red-500">Description</th>
-                      <th className="py-2 px-3 text-center w-16 border-r border-red-500">QTY</th>
-                      <th className="py-2 px-3 text-center w-16 border-r border-red-500">UOM</th>
-                      <th className="py-2 px-3 text-right w-28 border-r border-red-500">Price</th>
-                      <th className="py-2 px-3 text-right w-32">Total Price</th>
+                      <th className={`${tableCellPadding} text-center w-12 border-r border-red-500`}>Item</th>
+                      <th className={`${tableCellPadding} text-left border-r border-red-500`}>Description</th>
+                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500`}>QTY</th>
+                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500`}>UOM</th>
+                      <th className={`${tableCellPadding} text-right w-28 border-r border-red-500`}>Price</th>
+                      <th className={`${tableCellPadding} text-right w-32`}>Total Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -363,16 +398,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                           key={detail.id || idx}
                           className={`${isGray ? 'bg-gray-100' : 'bg-white'} border-b border-gray-100`}
                         >
-                          <td className="py-2 px-3 text-center text-gray-700">{idx + 1}</td>
-                          <td className="py-2 px-3 font-semibold text-gray-800">
+                          <td className={`${tableCellPadding} text-center text-gray-700`}>{idx + 1}</td>
+                          <td className={`${tableCellPadding} font-semibold text-gray-800`}>
                             {detail.barang?.nama_barang || detail.nama_barang || 'Kain'}
                           </td>
-                          <td className="py-2 px-3 text-center text-gray-700">{actualYard}</td>
-                          <td className="py-2 px-3 text-center text-gray-700">yard</td>
-                          <td className="py-2 px-3 text-right text-gray-700">
+                          <td className={`${tableCellPadding} text-center text-gray-700`}>{actualYard}</td>
+                          <td className={`${tableCellPadding} text-center text-gray-700`}>yard</td>
+                          <td className={`${tableCellPadding} text-right text-gray-700`}>
                             {toNumber(detail.harga_satuan).toLocaleString('id-ID')}
                           </td>
-                          <td className="py-2 px-3 text-right font-semibold text-gray-900">
+                          <td className={`${tableCellPadding} text-right font-semibold text-gray-900`}>
                             {rowTotal.toLocaleString('id-ID')}
                           </td>
                         </tr>
@@ -387,12 +422,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                           key={`empty-${i}`}
                           className={`${isGray ? 'bg-gray-100' : 'bg-white'} border-b border-gray-100 h-7`}
                         >
-                          <td className="py-2 px-3 text-center text-transparent">-</td>
-                          <td className="py-2 px-3 text-transparent">-</td>
-                          <td className="py-2 px-3 text-center text-transparent">-</td>
-                          <td className="py-2 px-3 text-center text-transparent">-</td>
-                          <td className="py-2 px-3 text-right text-transparent">-</td>
-                          <td className="py-2 px-3 text-right text-gray-400">0</td>
+                          <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
+                          <td className={`${tableCellPadding} text-transparent`}>-</td>
+                          <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
+                          <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
+                          <td className={`${tableCellPadding} text-right text-transparent`}>-</td>
+                          <td className={`${tableCellPadding} text-right text-gray-400`}>0</td>
                         </tr>
                       );
                     })}
@@ -402,7 +437,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
               {/* Totals Section */}
               <div className="flex justify-end mb-8">
-                <div className="w-72 sm:w-80 text-xs space-y-1.5">
+                <div className="w-72 sm:w-80 text-xs space-y-1.5 bg-white text-gray-900" style={{ backgroundColor: '#ffffff' }}>
                   <div className="flex justify-between items-center py-0.5 text-gray-700 font-bold">
                     <span>SUBTOTAL</span>
                     <span>{subtotal.toLocaleString('id-ID')}</span>
@@ -426,8 +461,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             {/* Bottom Signatures & Bank Info */}
-            <div className="mt-6 bg-white pt-2">
-              <div className="flex justify-between items-end pb-6 bg-white">
+            <div className="mt-8 bg-white pt-2 text-gray-900" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
+              <div className="flex justify-between items-end pb-6 bg-white" style={{ backgroundColor: '#ffffff' }}>
                 {/* Account Bank */}
                 <div className="text-xs text-gray-800 space-y-1">
                   <div className="font-bold flex items-center gap-2">
