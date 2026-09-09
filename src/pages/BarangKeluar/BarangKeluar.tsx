@@ -1478,7 +1478,7 @@ export default function BarangKeluar() {
       try { printSourceWrapper?.classList.add('print-ready'); } catch (e) { /* ignore */ }
       // Dynamically import libraries to avoid hard dependency at build-time
       const [{ default: html2canvas }, jspdfModule] = await Promise.all([
-        import('html2canvas'),
+        import('html2canvas-pro'),
         import('jspdf')
       ]);
       const { jsPDF } = jspdfModule as any;

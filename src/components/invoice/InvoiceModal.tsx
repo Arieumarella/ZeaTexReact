@@ -87,18 +87,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     setDownloading(true);
     try {
       const [{ default: html2canvas }, jspdfModule] = await Promise.all([
-        import('html2canvas'),
+        import('html2canvas-pro'),
         import('jspdf'),
       ]);
       const { jsPDF } = jspdfModule as any;
 
       const element = invoiceRef.current;
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2.5,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (clonedDoc: Document) => {
+          const printable = clonedDoc.getElementById('printable-invoice');
+          if (printable) {
+            printable.style.backgroundColor = '#ffffff';
+            printable.style.color = '#111827';
+          }
+        },
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
