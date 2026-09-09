@@ -41,6 +41,28 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const partyNpwp = party.npwp || '-';
   const partyEmail = party.email || '-';
 
+  // BILL TO values:
+  // - Barang Keluar: NPWP pelanggan, Nama Pelanggan, Alamat Pelanggan, Telp Pelanggan, Email Pelanggan
+  // - Barang Masuk: 1000000010816967, PT Zea Textile, Profile Alamat, Profile No Telepon 1, zeatextile@gmail.com
+  const billToNpwp = isKeluar ? partyNpwp : '1000000010816967';
+  const billToCompanyName = isKeluar ? partyName : 'PT Zea Textile';
+  const billToAddress = isKeluar ? partyAddress : (activeProfile?.alamat || '-');
+  const billToPhone = isKeluar ? partyPhone : (activeProfile?.nomor_telepon_1 || '-');
+  const billToEmail = isKeluar ? partyEmail : 'zeatextile@gmail.com';
+
+  // SHIP TO values:
+  // - Barang Keluar: Nama Pelanggan, Alamat Pelanggan, Telp Pelanggan
+  // - Barang Masuk: Profile Nama Toko, Profile Alamat, Profile No Telepon 1
+  const shipToName = isKeluar
+    ? partyName
+    : (activeProfile?.nama_toko || activeProfile?.nama || 'PT Zea Textile');
+  const shipToAddress = isKeluar
+    ? (partyAddress !== '-' ? partyAddress : 'Alamat sesuai data penerima')
+    : (activeProfile?.alamat || '-');
+  const shipToPhone = isKeluar
+    ? (partyPhone !== '-' ? `Telp: ${partyPhone}` : '')
+    : (activeProfile?.nomor_telepon_1 ? `Telp: ${activeProfile.nomor_telepon_1}` : '');
+
   const details = transaksi.details || [];
   const toNumber = (val: any) => Number(val || 0);
 
@@ -334,23 +356,23 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <div className="p-3 text-xs space-y-1 leading-relaxed text-gray-800">
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">NPWP</span>
-                      <span>: 1000000010816967</span>
+                      <span>: {billToNpwp}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Company Name</span>
-                      <span className="font-bold">: PT Zea Textile Group</span>
+                      <span className="font-bold">: {billToCompanyName}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Street Address</span>
-                      <span>: {activeProfile?.alamat || partyAddress || '-'}</span>
+                      <span>: {billToAddress}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Phone</span>
-                      <span>: {activeProfile?.nomor_telepon_1 || partyPhone || '-'}</span>
+                      <span>: {billToPhone}</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Email</span>
-                      <span>: zeatextile@gmail.com</span>
+                      <span>: {billToEmail}</span>
                     </div>
                   </div>
                 </div>
@@ -361,9 +383,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     SHIP TO
                   </div>
                   <div className="p-3 text-xs space-y-1 leading-relaxed text-gray-800">
-                    <div className="font-bold">{partyName}</div>
-                    <div>{partyAddress !== '-' ? partyAddress : 'Alamat sesuai data penerima'}</div>
-                    <div>Telp: {partyPhone}</div>
+                    <div className="font-bold">{shipToName}</div>
+                    {shipToAddress && shipToAddress !== '-' && <div>{shipToAddress}</div>}
+                    {shipToPhone && <div>{shipToPhone}</div>}
                   </div>
                 </div>
               </div>
