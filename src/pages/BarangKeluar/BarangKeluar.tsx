@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import { useNavigate } from "react-router-dom";
 import { deleteTransaksiKeluar, getTransaksiKeluar, getAllCustomers, getTransaksiKeluarById, sendNotaFile, getStoreProfile, updateTransaksiKeluar } from "../../service/barangKeluarService";
+import InvoiceModal from "../../components/invoice/InvoiceModal";
 import {
   Table,
   TableHeader,
@@ -1938,229 +1939,18 @@ export default function BarangKeluar() {
         </ComponentCard>
       </div>
       {/* ToastContainer is handled globally in main.tsx */}
-
-      {/* Modal Cetak Nota */}
       {showPrintModal && selectedTransaksiForPrint && (
-        <div className="modal-overlay fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999999]">
-          <style>{printStyles}</style>
-          <div className="modal-content bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header Modal */}
-            <div className="modal-header flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-xl font-bold text-gray-800">Cetak Nota</h2>
-              <button onClick={() => setShowPrintModal(false)} disabled={loadingPrintData} className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50">&times;</button>
-            </div>
-
-            {/* Loading State */}
-            {loadingPrintData && (
-              <div className="p-6 flex justify-center items-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                  <p className="text-gray-600">Memuat data...</p>
-                </div>
-              </div>
-            )}
-
-            {/* Content Modal - Nota (tetap menggunakan layout lama) */}
-            {!loadingPrintData && (
-              <div className="print-content p-6 bg-white text-gray-800">
-                <div className="border-b pb-4 mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">NOTA PEMBELIAN BARANG - Zea Textile</h3>
-                  <p className="text-sm text-gray-600">No. Transaksi: {selectedTransaksiForPrint.id}</p>
-                </div>
-
-                {storeProfile && (
-                  <div className="mb-4 pb-4 border-b text-sm text-gray-700 space-y-1">
-                    <p className="text-base font-semibold text-gray-900">{storeProfile.nama_toko}</p>
-                    {storeProfile.alamat && <p>{storeProfile.alamat}</p>}
-                    {storePhones.length > 0 && (
-                      <div className="flex flex-col gap-1 pt-1">
-                        <p className="text-xs font-semibold tracking-wide text-gray-500">Kontak / Nomor Telepon · WhatsApp</p>
-                        <div className="flex flex-wrap gap-4">
-                          {storePhones.map((phone: { label: string; value: string }) => (
-                            <span key={phone.label} className="text-xs uppercase tracking-wide text-gray-500">
-                              {phone.label}: <span className="text-sm font-medium text-gray-800 normal-case">{phone.value}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {(storeProfile.rekening || storeProfile.nama_rekening) && (
-                      <div className="text-sm text-gray-800 pt-1">
-                        {storeProfile.rekening && <p>{storeProfile.rekening}</p>}
-                        {storeProfile.nama_rekening && <p>{storeProfile.nama_rekening}</p>}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">Tanggal:</p>
-                    <p className="text-sm text-gray-700">{formatDateWithMonth(selectedTransaksiForPrint.tgl_transaksi)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">Pelanggan :</p>
-                    <p className="text-sm text-gray-700">{selectedTransaksiForPrint.pelanggan?.nama || '-'}</p>
-                  </div>
-                </div>
-
-                {/* Status Pembayaran (ditampilkan di modal dan pada PDF nota) */}
-                <div className="mb-4 pb-4 border-b">
-                  <p className="text-sm font-semibold text-gray-800">Status Pembayaran:</p>
-                  {(() => {
-                    const totalBayar = calculateTotalPayment(selectedTransaksiForPrint.berjangka || []);
-                    const totalTransaksi = Number(selectedTransaksiForPrint.total_transaksi || 0);
-                    if (selectedTransaksiForPrint.status_pembayaran === "1") {
-                      const sudahLunasBerjangka = totalBayar >= totalTransaksi;
-                      return (
-                        <div className="text-sm text-gray-700 mt-2">
-                          <div className={`inline-block text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${sudahLunasBerjangka ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                            {sudahLunasBerjangka ? 'Lunas - Pembayaran Berjangka' : 'Pembayaran Berjangka'}
-                          </div>
-                          <div className="mt-3 space-y-2 installments-list">
-                            {(selectedTransaksiForPrint.berjangka || []).length === 0 && (
-                              <div className="text-sm text-gray-600">Tidak ada data cicilan.</div>
-                            )}
-                            {(selectedTransaksiForPrint.berjangka || []).map((b: any, i: number) => (
-                              <div key={b.id || i} className="bg-gray-50 p-2 rounded">
-                                <div className="flex justify-between items-center">
-                                  <div className="text-sm pr-4 whitespace-nowrap">Angsuran {i + 1} - Jatuh Tempo: {formatDateWithMonth(b.tgl_jatuh_tempo)}</div>
-                                  <div className="text-sm font-semibold text-right whitespace-nowrap" style={{ fontFamily: 'Roboto Mono, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums', minWidth: '200px' }}>
-                                    Rp {Number(b.jml_bayar || 0).toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            <div className="flex justify-between mt-2 text-sm items-center">
-                              <div>Total Terbayar:</div>
-                              <div className="font-semibold text-right whitespace-nowrap" style={{ fontFamily: 'Roboto Mono, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums', minWidth: '200px' }}>Rp {totalBayar.toLocaleString()}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="text-sm text-gray-700 mt-2">
-                        <div className="inline-block text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap bg-green-100 text-green-800">Lunas</div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Tabel Detail Barang */}
-                <div className="mb-4">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b-2 bg-gray-100">
-                        <th className="text-left py-2 px-2 text-gray-800">No</th>
-                        <th className="text-left py-2 px-2 text-gray-800">Barang</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Yard</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Rol</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Retur Yard</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Retur Rol</th>
-                        <th className="text-right py-2 px-2 text-gray-800">Harga Per Yard</th>
-                        <th className="text-right py-2 px-2 text-gray-800">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(selectedTransaksiForPrint.details || []).map((detail: any, idx: number) => {
-                        const actualYard = Math.max(0, (detail.jml_yard || 0) - (detail.jml_yard_retur || 0));
-                        const rowTotal = actualYard * detail.harga_satuan;
-                        return (
-                          <tr key={idx} className="border-b">
-                            <td className="py-2 text-gray-800">{idx + 1}</td>
-                            <td className="py-2 text-gray-800">{detail.barang?.nama_barang || '-'}</td>
-                            <td className="text-center py-2 text-gray-800">{detail.jml_yard}</td>
-                            <td className="text-center py-2 text-gray-800">{detail.jml_rol}</td>
-                            <td className="text-center py-2 text-gray-800" style={{ backgroundColor: (detail.jml_yard_retur || 0) > 0 ? '#fed7aa' : 'transparent' }}>​{detail.jml_yard_retur || 0}</td>
-                            <td className="text-center py-2 text-gray-800" style={{ backgroundColor: (detail.jml_rol_retur || 0) > 0 ? '#fed7aa' : 'transparent' }}>{detail.jml_rol_retur || 0}</td>
-                            <td className="text-right py-2 text-gray-800">Rp {Number(detail.harga_satuan).toLocaleString()}</td>
-                            <td className="text-right py-2 text-gray-800">Rp {rowTotal.toLocaleString()}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Total dengan Breakdown */}
-                <div className="space-y-2 pb-4 border-b text-sm">
-                  {(() => {
-                    const totalBarang = (selectedTransaksiForPrint.details || []).reduce((sum: number, detail: any) => {
-                      const actualYard = Math.max(0, (detail.jml_yard || 0) - (detail.jml_yard_retur || 0));
-                      return sum + (actualYard * detail.harga_satuan);
-                    }, 0);
-
-                    const discountNominal = selectedTransaksiForPrint.tipe_discount === "persen"
-                      ? (totalBarang * selectedTransaksiForPrint.jml_discount) / 100
-                      : selectedTransaksiForPrint.jml_discount;
-
-                    const subtotal = totalBarang - discountNominal;
-
-                    const ppnNominal = selectedTransaksiForPrint.tipe_ppn === "persen"
-                      ? (subtotal * selectedTransaksiForPrint.jml_ppn) / 100
-                      : selectedTransaksiForPrint.jml_ppn;
-
-                    const totalKeseluruhan = subtotal + ppnNominal;
-
-                    return (
-                      <>
-                        <div>
-                          <span>Total Harga Barang:</span>
-                          <span>Rp {totalBarang.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>Discount:</span>
-                          <span>- Rp {discountNominal.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>Subtotal:</span>
-                          <span>Rp {subtotal.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>PPN:</span>
-                          <span>+ Rp {ppnNominal.toLocaleString()}</span>
-                        </div>
-                        <div className="font-bold text-base">
-                          <span>Total Harga Keseluruhan:</span>
-                          <span>Rp {totalKeseluruhan.toLocaleString()}</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {!loadingPrintData && selectedTransaksiForPrint && (
-              <div className="print-source-wrapper" aria-hidden="true">
-                {renderModernNota(selectedTransaksiForPrint)}
-              </div>
-            )}
-
-            {/* Footer Modal */}
-            <div className="modal-footer flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button onClick={() => setShowPrintModal(false)} disabled={loadingPrintData || sendingWA} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50">Tutup</button>
-              <button onClick={() => sendWhatsAppViaServer()} disabled={loadingPrintData || sendingWA} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 flex items-center justify-center">
-                {sendingWA ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                    </svg>
-                    Mengirim...
-                  </>
-                ) : (
-                  'Kirim WhatsApp'
-                )}
-              </button>
-              <button onClick={handlePrintNota} disabled={loadingPrintData || sendingWA} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">Print</button>
-            </div>
-          </div>
-        </div>
+        <InvoiceModal
+          isOpen={showPrintModal}
+          onClose={() => {
+            setShowPrintModal(false);
+            setSelectedTransaksiForPrint(null);
+          }}
+          transaksi={selectedTransaksiForPrint}
+          type="keluar"
+          storeProfile={storeProfile}
+        />
       )}
-
-      {/* ToastContainer is handled globally in main.tsx */}
 
       {/* Premium Receipt Modal */}
       {notaModalOpen && (

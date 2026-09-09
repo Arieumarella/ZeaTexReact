@@ -14,6 +14,8 @@ import {
   TableCell,
 } from "../../components/ui/table";
 import { getAllSuppliers, Supplier, getTransaksiMasuk, TransaksiItem, deleteTransaksiMasuk, getTransaksiMasukById, updateTransaksiMasuk } from '../../service/barangMasuk';
+import { getStoreProfile } from '../../service/barangKeluarService';
+import InvoiceModal from '../../components/invoice/InvoiceModal';
 
 // Helper function to format date with month name
 const formatDateWithMonth = (dateString: string): string => {
@@ -39,6 +41,36 @@ export default function BarangMasuk() {
   const [loadingNotaData, setLoadingNotaData] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // State untuk modal cetak nota
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [selectedTransaksiForPrint, setSelectedTransaksiForPrint] = useState<any>(null);
+  const [loadingPrintData, setLoadingPrintData] = useState(false);
+  const [storeProfile, setStoreProfile] = useState<any>(null);
+
+  useEffect(() => {
+    getStoreProfile().then((res) => {
+      if (res) setStoreProfile(res);
+    }).catch(console.error);
+  }, []);
+
+  const handleOpenPrintModal = async (transaksiId: number) => {
+    setShowPrintModal(true);
+    setLoadingPrintData(true);
+    try {
+      const data = await getTransaksiMasukById(transaksiId);
+      if (data) {
+        setSelectedTransaksiForPrint(data);
+      } else {
+        toast.error('Gagal memuat data transaksi');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Terjadi kesalahan saat memuat data');
+    } finally {
+      setLoadingPrintData(false);
+    }
+  };
 
   const openNotaModal = async (item: TransaksiItem) => {
     setSelectedNota(item.nota || null);
@@ -582,6 +614,7 @@ export default function BarangMasuk() {
                           )}
                           {/* Retur Barang button */}
                           <button className="px-1.5 py-0.5 text-xs bg-indigo-500 text-white rounded mr-1 hover:bg-indigo-600" onClick={() => navigate(`/retur-masuk/${item.id}`)}>Retur</button>
+                          <button className="px-1.5 py-0.5 text-xs bg-green-500 text-white rounded mr-1 hover:bg-green-600" onClick={() => handleOpenPrintModal(item.id)}>Cetak Nota</button>
                           <button
                             className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                             onClick={() => handleDeleteTransaksi(item.id, item.supplier?.nama || 'Unknown')}
@@ -845,6 +878,20 @@ export default function BarangMasuk() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Cetak Nota / Invoice */}
+      {showPrintModal && selectedTransaksiForPrint && (
+        <InvoiceModal
+          isOpen={showPrintModal}
+          onClose={() => {
+            setShowPrintModal(false);
+            setSelectedTransaksiForPrint(null);
+          }}
+          transaksi={selectedTransaksiForPrint}
+          type="masuk"
+          storeProfile={storeProfile}
+        />
       )}
     </>
   );

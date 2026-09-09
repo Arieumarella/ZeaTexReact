@@ -18,8 +18,6 @@ export default function EditKeluar() {
   const [saving, setSaving] = useState(false);
   const [discountType, setDiscountType] = useState("persen");
   const [discountValue, setDiscountValue] = useState(0);
-  const [ppnType, setPpnType] = useState("persen");
-  const [ppnValue, setPpnValue] = useState(0);
   const [catatan, setCatatan] = useState("");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerQuery, setCustomerQuery] = useState("");
@@ -62,8 +60,6 @@ export default function EditKeluar() {
             setTenor(trans.tenor || 1);
             setDiscountType(trans.tipe_discount || 'persen');
             setDiscountValue(trans.jml_discount || 0);
-            setPpnType(trans.tipe_ppn || 'persen');
-            setPpnValue(trans.jml_ppn || 0);
             setCatatan(trans.catatan || '');
             setCurrentNota(trans.nota || null);
 
@@ -132,11 +128,10 @@ export default function EditKeluar() {
 
       const subtotal = totalBarang - discountNominal;
 
-      const ppnNominal = ppnType === "persen"
-        ? (subtotal * ppnValue) / 100
-        : ppnValue;
-
-      const totalKeseluruhan = subtotal + ppnNominal;
+      // Perhitungan Pajak Otomatis (DPP Nilai Lain & Tax)
+      const dppNilaiLain = Math.round((11 / 12) * subtotal);
+      const taxNominal = Math.round(0.12 * dppNilaiLain);
+      const totalKeseluruhan = subtotal + taxNominal;
 
       const payload = {
         id_pelanggan: customer ? parseInt(customer) : null,
@@ -144,8 +139,8 @@ export default function EditKeluar() {
         total_transaksi: totalKeseluruhan,
         tipe_discount: discountType,
         jml_discount: discountValue,
-        tipe_ppn: ppnType,
-        jml_ppn: ppnValue,
+        tipe_ppn: "persen",
+        jml_ppn: 11,
         catatan: catatan || null,
         status_pembayaran: statusPembayaran,
         tenor: statusPembayaran === "1" ? tenor : 1,
@@ -198,13 +193,10 @@ export default function EditKeluar() {
     ? (totalBarang * discountValue) / 100
     : discountValue;
 
-  const subtotal = totalBarang - discountNominal;
-
-  const ppnNominal = ppnType === "persen"
-    ? (subtotal * ppnValue) / 100
-    : ppnValue;
-
-  const totalKeseluruhan = subtotal + ppnNominal;
+  const subtotal = Math.max(0, totalBarang - discountNominal);
+  const dppNilaiLain = Math.round((11 / 12) * subtotal);
+  const taxNominal = Math.round(0.12 * dppNilaiLain);
+  const totalKeseluruhan = subtotal + taxNominal;
 
   return (
     <>
@@ -496,26 +488,14 @@ export default function EditKeluar() {
                 + Tambah Barang
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Discount</label>
-                <div className="flex gap-2">
-                  <select className="border rounded px-2 py-2 dark:bg-gray-900 dark:text-white/90" value={discountType} onChange={e => setDiscountType(e.target.value)}>
-                    <option value="persen">%</option>
-                    <option value="harga">Rp</option>
-                  </select>
-                  <input type="number" min="0" value={discountValue === 0 ? "" : discountValue.toString()} onChange={e => setDiscountValue(Number(e.target.value.replace(/^0+/, "")))} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" placeholder="Discount" />
-                </div>
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">PPN</label>
-                <div className="flex gap-2">
-                  <select className="border rounded px-2 py-2 dark:bg-gray-900 dark:text-white/90" value={ppnType} onChange={e => setPpnType(e.target.value)}>
-                    <option value="persen">%</option>
-                    <option value="harga">Rp</option>
-                  </select>
-                  <input type="number" min="0" value={ppnValue === 0 ? "" : ppnValue.toString()} onChange={e => setPpnValue(Number(e.target.value.replace(/^0+/, "")))} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" placeholder="PPN" />
-                </div>
+            <div className="pt-6">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">Discount (Opsional)</label>
+              <div className="flex gap-2 max-w-md">
+                <select className="border rounded px-2 py-2 dark:bg-gray-900 dark:text-white/90" value={discountType} onChange={e => setDiscountType(e.target.value)}>
+                  <option value="persen">%</option>
+                  <option value="harga">Rp</option>
+                </select>
+                <input type="number" min="0" value={discountValue === 0 ? "" : discountValue.toString()} onChange={e => setDiscountValue(Number(e.target.value.replace(/^0+/, "")))} className="border rounded px-3 py-2 w-full dark:bg-gray-900 dark:text-white/90" placeholder="Discount" />
               </div>
             </div>
             {/* Catatan */}
@@ -593,14 +573,34 @@ export default function EditKeluar() {
                 </div>
               )}
             </div>
-            {/* Total Harga Keseluruhan */}
             <div className="pt-6">
-              <div className="text-lg font-semibold text-gray-700 dark:text-white flex flex-col gap-1">
-                <span>Total Harga Barang: <span className="font-bold">Rp {totalBarang.toLocaleString()}</span></span>
-                <span>Discount: <span className="font-bold">Rp {discountNominal.toLocaleString()}</span></span>
-                <span>Subtotal: <span className="font-bold">Rp {subtotal.toLocaleString()}</span></span>
-                <span>PPN: <span className="font-bold">Rp {ppnNominal.toLocaleString()}</span></span>
-                <span className="text-blue-600">Total Harga Keseluruhan: <span className="font-bold">Rp {totalKeseluruhan.toLocaleString()}</span></span>
+              <div className="text-base font-medium text-gray-700 dark:text-white flex flex-col gap-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 max-w-lg">
+                <div className="flex justify-between items-center">
+                  <span>Total Harga Barang:</span>
+                  <span className="font-semibold">Rp {totalBarang.toLocaleString('id-ID')}</span>
+                </div>
+                {discountNominal > 0 && (
+                  <div className="flex justify-between items-center text-red-500">
+                    <span>Discount:</span>
+                    <span className="font-semibold">- Rp {discountNominal.toLocaleString('id-ID')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center border-t pt-1.5 dark:border-gray-700">
+                  <span className="font-semibold">Subtotal:</span>
+                  <span className="font-bold">Rp {subtotal.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                  <span>DPP Nilai Lain (Otomatis):</span>
+                  <span>Rp {dppNilaiLain.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                  <span>Tax / Pajak (Otomatis):</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">+ Rp {taxNominal.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between items-center text-lg font-bold text-red-600 dark:text-red-400 border-t pt-2 dark:border-gray-700">
+                  <span>Grand Total:</span>
+                  <span>Rp {totalKeseluruhan.toLocaleString('id-ID')}</span>
+                </div>
               </div>
             </div>
             <div className="flex justify-end pt-6">

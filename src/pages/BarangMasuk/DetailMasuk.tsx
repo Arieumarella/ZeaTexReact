@@ -5,6 +5,8 @@ import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { toast } from "react-toastify";
 import { getTransaksiMasukById } from '../../service/barangMasuk';
+import { getStoreProfile } from '../../service/barangKeluarService';
+import InvoiceModal from "../../components/invoice/InvoiceModal";
 
 // Helper function to format date with month name
 const formatDateWithMonth = (dateString: string): string => {
@@ -59,6 +61,14 @@ export default function DetailMasuk() {
   const { id } = useParams();
   const [transaksi, setTransaksi] = useState<TransaksiDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [storeProfile, setStoreProfile] = useState<any>(null);
+
+  useEffect(() => {
+    getStoreProfile().then((res) => {
+      if (res) setStoreProfile(res);
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -105,13 +115,10 @@ export default function DetailMasuk() {
     ? (totalBarang * transaksi.jml_discount) / 100
     : transaksi.jml_discount;
 
-  const subtotal = totalBarang - discountNominal;
-
-  const ppnNominal = transaksi.tipe_ppn === "persen"
-    ? (subtotal * transaksi.jml_ppn) / 100
-    : transaksi.jml_ppn;
-
-  const totalHargaKeseluruhan = subtotal + ppnNominal;
+  const subtotal = Math.max(0, totalBarang - discountNominal);
+  const dppNilaiLain = Math.round((11 / 12) * subtotal);
+  const tax = Math.round(0.12 * dppNilaiLain);
+  const totalHargaKeseluruhan = subtotal + tax;
 
   return (
     <>
@@ -200,22 +207,20 @@ export default function DetailMasuk() {
               </div>
             </div>
 
-            {/* Discount & PPN */}
+            {/* Discount & Tax */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
               <div>
                 <span className="block text-sm text-gray-500 dark:text-gray-400">Discount</span>
                 <span className="font-semibold text-gray-800 dark:text-white/90">
                   {transaksi.tipe_discount === "persen"
                     ? `${transaksi.jml_discount}%`
-                    : `Rp ${Number(transaksi.jml_discount).toLocaleString()}`}
+                    : `Rp ${Number(transaksi.jml_discount || 0).toLocaleString()}`}
                 </span>
               </div>
               <div>
-                <span className="block text-sm text-gray-500 dark:text-gray-400">PPN</span>
+                <span className="block text-sm text-gray-500 dark:text-gray-400">Tax (Otomatis By Sistem)</span>
                 <span className="font-semibold text-gray-800 dark:text-white/90">
-                  {transaksi.tipe_ppn === "persen"
-                    ? `${transaksi.jml_ppn}%`
-                    : `Rp ${Number(transaksi.jml_ppn).toLocaleString()}`}
+                  Rp {tax.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -266,17 +271,23 @@ export default function DetailMasuk() {
                   <span>Total Harga Barang:</span>
                   <span className="font-semibold">Rp {totalBarang.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-gray-700 dark:text-white/90">
-                  <span>Discount:</span>
-                  <span className="font-semibold">- Rp {discountNominal.toLocaleString()}</span>
-                </div>
+                {discountNominal > 0 && (
+                  <div className="flex justify-between text-gray-700 dark:text-white/90">
+                    <span>Discount:</span>
+                    <span className="font-semibold">- Rp {discountNominal.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-700 dark:text-white/90">
                   <span>Subtotal:</span>
                   <span className="font-semibold">Rp {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-700 dark:text-white/90">
-                  <span>PPN:</span>
-                  <span className="font-semibold">+ Rp {ppnNominal.toLocaleString()}</span>
+                  <span>DPP Nilai Lain (11/12):</span>
+                  <span className="font-semibold">Rp {dppNilaiLain.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-gray-700 dark:text-white/90">
+                  <span>Tax (12% dari DPP):</span>
+                  <span className="font-semibold">+ Rp {tax.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 border-t pt-2 mt-2">
                   <span>Total Keseluruhan:</span>
@@ -286,18 +297,36 @@ export default function DetailMasuk() {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-6 border-t flex gap-3">
+            <div className="pt-6 border-t flex flex-wrap gap-3">
               <button
                 onClick={() => window.history.back()}
                 className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition"
               >
                 ← Kembali
               </button>
-              {/* Edit and Delete buttons can be added here later */}
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded transition flex items-center gap-2 shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Cetak / Download Nota
+              </button>
             </div>
           </div>
         </ComponentCard>
       </div>
+
+      {showInvoiceModal && transaksi && (
+        <InvoiceModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          transaksi={transaksi}
+          type="masuk"
+          storeProfile={storeProfile}
+        />
+      )}
     </>
   );
 }
