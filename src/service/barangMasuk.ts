@@ -5,6 +5,9 @@ export interface Supplier {
   id: number;
   nama: string;
   no_tlp: string;
+  npwp?: string | null;
+  email?: string | null;
+  alamat?: string | null;
   created_at: string;
   updated_at: string;
 }

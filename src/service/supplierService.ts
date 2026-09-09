@@ -6,6 +6,17 @@ export interface Supplier {
   nama: string;
   noTelp?: string;
   no_tlp?: string;
+  npwp?: string | null;
+  email?: string | null;
+  alamat?: string | null;
+}
+
+export interface SupplierPayload {
+  nama: string;
+  no_tlp: string;
+  npwp?: string;
+  email?: string;
+  alamat?: string;
 }
 
 export async function getDetailSupplier(id: number): Promise<{ status: boolean; data?: Supplier; message?: string }> {
@@ -29,12 +40,12 @@ export async function getDetailSupplier(id: number): Promise<{ status: boolean; 
   }
 }
 
-export async function updateSupplier(id: number, { nama, no_tlp }: { nama: string; no_tlp: string }): Promise<{ status: boolean; message?: string }> {
+export async function updateSupplier(id: number, payload: SupplierPayload): Promise<{ status: boolean; message?: string }> {
   try {
     const response = await fetch(`${API_BASE}/supplier/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ nama, no_tlp }),
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {
@@ -52,12 +63,12 @@ export async function updateSupplier(id: number, { nama, no_tlp }: { nama: strin
   }
 }
 
-export async function createSupplier({ nama, no_tlp }: { nama: string; no_tlp: string }): Promise<{ status: boolean; message?: string }> {
+export async function createSupplier(payload: SupplierPayload): Promise<{ status: boolean; message?: string }> {
   try {
     const response = await fetch(API_BASE + '/supplier', {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ nama, no_tlp }),
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
     if (!response.ok || !data.status) {

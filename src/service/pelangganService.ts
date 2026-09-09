@@ -6,6 +6,9 @@ export interface Pelanggan {
 	nama: string;
 	no_tlp: string;
 	noWhatsapp?: string;
+	npwp?: string | null;
+	email?: string | null;
+	alamat?: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -19,6 +22,9 @@ export interface PelangganDetailResponse {
 export interface CreatePelangganPayload {
 	nama: string;
 	no_tlp: string;
+	npwp?: string;
+	email?: string;
+	alamat?: string;
 }
 
 export interface PelangganListResponse {
@@ -82,7 +88,7 @@ export async function getDetailPelanggan(id: number): Promise<PelangganDetailRes
 	}
 }
 
-export async function updatePelanggan(id: number, payload: { nama: string; no_tlp: string }): Promise<{ status: boolean; message?: string }> {
+export async function updatePelanggan(id: number, payload: CreatePelangganPayload): Promise<{ status: boolean; message?: string }> {
 	try {
 		const response = await fetch(`${API_BASE}/pelanggan/${id}`, {
 			method: 'PUT',

@@ -121,33 +121,39 @@ export default function ManajemenSupplier() {
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
                     <TableCell isHeader className="w-12 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">No</TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nama</TableCell>
-                    <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nomor Telepon</TableCell>
-                    <TableCell isHeader className="w-48 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
+                    <TableCell isHeader className="px-4 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nama</TableCell>
+                    <TableCell isHeader className="px-4 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Nomor Telepon</TableCell>
+                    <TableCell isHeader className="px-4 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">NPWP</TableCell>
+                    <TableCell isHeader className="px-4 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Email</TableCell>
+                    <TableCell isHeader className="px-4 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Alamat</TableCell>
+                    <TableCell isHeader className="w-40 px-2 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400">Aksi</TableCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {loading ? (
                     <TableRow>
-                      <TableCell className="text-center py-4">
-                        <td colSpan={3} className="text-center py-4 dark:text-gray-400">Loading...</td>
+                      <TableCell className="text-center py-4" colSpan={7}>
+                        <div className="text-center py-4 dark:text-gray-400">Loading...</div>
                       </TableCell>
                     </TableRow>
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell className="text-center py-4">
-                        <td colSpan={3} className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</td>
+                      <TableCell className="text-center py-4" colSpan={7}>
+                        <div className="text-center py-4 dark:text-gray-400">Data tidak ditemukan</div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     data.map((item, idx) => (
                       <TableRow key={item.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
                         <TableCell className="w-12 px-2 py-2 border text-center text-gray-800 dark:text-white/90">{(page - 1) * rowsPerPage + idx + 1}</TableCell>
-                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.nama}</TableCell>
-                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.no_tlp}</TableCell>
-                        <TableCell className="w-48 px-2 py-2 border text-center">
-                          <button className="px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600" onClick={() => navigate(`/edit-manajemen-supplier/${item.id}`)}>Edit</button>
-                          <button className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600" onClick={() => handleDelete(item.id)}>Hapus</button>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90 font-medium">{item.nama}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.no_tlp || '-'}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.npwp || '-'}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90">{item.email || '-'}</TableCell>
+                        <TableCell className="px-4 py-2 border text-center text-gray-800 dark:text-white/90 max-w-xs truncate" title={item.alamat || ''}>{item.alamat || '-'}</TableCell>
+                        <TableCell className="w-40 px-2 py-2 border text-center">
+                          <button className="px-2 py-1 text-xs bg-yellow-500 text-white rounded mr-1 hover:bg-yellow-600 transition" onClick={() => navigate(`/edit-manajemen-supplier/${item.id}`)}>Edit</button>
+                          <button className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition" onClick={() => handleDelete(item.id)}>Hapus</button>
                         </TableCell>
                       </TableRow>
                     ))
