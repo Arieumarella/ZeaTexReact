@@ -309,24 +309,31 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             {/* Top Section */}
             <div className="bg-white text-gray-900 flex-1" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
               {/* Header Banner */}
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-6">
                 {/* Logo Area */}
-                <div className="pt-2">
-                  <div className="font-extrabold text-2xl tracking-wider text-gray-800">
-                    ZEA TEXTILE
-                  </div>
-                  <div className="text-xs text-gray-500 tracking-widest font-semibold uppercase mt-0.5">
-                    Grosir & Supplier Tekstil
+                <div className="pt-1">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-8 bg-[#e50914] rounded-sm inline-block"></span>
+                    <div>
+                      <div className="font-extrabold text-2xl tracking-[0.16em] text-gray-900 leading-tight">
+                        ZEA TEXTILE
+                      </div>
+                      <div className="text-[10px] text-gray-500 tracking-[0.25em] font-semibold uppercase mt-0.5">
+                        Grosir & Supplier Tekstil
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Red/Black Invoice Banner */}
                 <div className="flex flex-col items-end">
-                  <div className="flex items-center shadow-sm">
-                    <div className="bg-[#e50914] h-12 w-48 sm:w-64 flex items-center justify-end px-4"></div>
-                    <div className="bg-black h-12 px-6 sm:px-10 flex items-center justify-center">
+                  <div className="flex items-stretch shadow-sm rounded-l-md overflow-hidden">
+                    <div className="bg-[#e50914] w-24 sm:w-36 flex items-center justify-center">
+                      <div className="h-0.5 w-10 bg-white/40 rounded-full"></div>
+                    </div>
+                    <div className="bg-black px-6 sm:px-10 py-2.5 flex items-center justify-center">
                       <span
-                        className="text-white text-2xl sm:text-3xl font-serif italic font-bold tracking-wider"
+                        className="text-white text-2xl sm:text-3xl font-serif italic font-black tracking-widest"
                         style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                       >
                         INVOICE
@@ -334,13 +341,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Date, Invoice No */}
-                  <div className="text-xs text-gray-800 mt-3 space-y-1 text-right font-medium">
-                    <div>
-                      <span className="font-bold">DATE :</span> {formatDate(transaksi.tgl_transaksi)}
+                  {/* Date & Invoice No */}
+                  <div className="text-xs text-gray-800 mt-2.5 space-y-1 text-right font-medium">
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="font-bold text-gray-400 text-[11px] uppercase tracking-wider">Date :</span>
+                      <span className="font-semibold text-gray-900">{formatDate(transaksi.tgl_transaksi)}</span>
                     </div>
-                    <div>
-                      <span className="font-bold">Invoice No :</span> {transaksi.id}
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="font-bold text-gray-400 text-[11px] uppercase tracking-wider">Invoice No :</span>
+                      <span className="font-extrabold text-gray-900">{transaksi.id}</span>
                     </div>
                   </div>
                 </div>
@@ -349,77 +358,83 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               {/* BILL TO & SHIP TO Boxes */}
               <div className="grid grid-cols-2 gap-4 mb-5">
                 {/* BILL TO Box */}
-                <div className="border border-black rounded-none">
-                  <div className="border-b border-black px-3 py-1 bg-white font-bold text-xs tracking-wider uppercase">
+                <div className="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                  <div className="border-b border-gray-200 px-3.5 py-1.5 bg-gray-900 text-white font-bold text-[11px] tracking-wider uppercase flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#e50914]"></span>
                     BILL TO
                   </div>
-                  <div className="p-3 text-xs space-y-1 leading-relaxed text-gray-800">
-                    <div className="grid grid-cols-[90px_1fr]">
-                      <span className="font-semibold">NPWP</span>
-                      <span>: {billToNpwp}</span>
+                  <div className="p-3.5 text-xs space-y-1.5 leading-relaxed text-gray-800">
+                    <div className="grid grid-cols-[105px_1fr]">
+                      <span className="text-gray-500 font-medium">NPWP</span>
+                      <span className="font-semibold text-gray-900">: {billToNpwp}</span>
                     </div>
-                    <div className="grid grid-cols-[90px_1fr]">
-                      <span className="font-semibold">Company Name</span>
-                      <span className="font-bold">: {billToCompanyName}</span>
+                    <div className="grid grid-cols-[105px_1fr]">
+                      <span className="text-gray-500 font-medium">Company Name</span>
+                      <span className="font-bold text-gray-900">: {billToCompanyName}</span>
                     </div>
-                    <div className="grid grid-cols-[90px_1fr]">
-                      <span className="font-semibold">Street Address</span>
-                      <span>: {billToAddress}</span>
+                    <div className="grid grid-cols-[105px_1fr]">
+                      <span className="text-gray-500 font-medium">Street Address</span>
+                      <span className="text-gray-800">: {billToAddress}</span>
                     </div>
-                    <div className="grid grid-cols-[90px_1fr]">
-                      <span className="font-semibold">Phone</span>
-                      <span>: {billToPhone}</span>
+                    <div className="grid grid-cols-[105px_1fr]">
+                      <span className="text-gray-500 font-medium">Phone</span>
+                      <span className="text-gray-800">: {billToPhone}</span>
                     </div>
-                    <div className="grid grid-cols-[90px_1fr]">
-                      <span className="font-semibold">Email</span>
-                      <span>: {billToEmail}</span>
+                    <div className="grid grid-cols-[105px_1fr]">
+                      <span className="text-gray-500 font-medium">Email</span>
+                      <span className="text-gray-800">: {billToEmail}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* SHIP TO Box */}
-                <div className="border border-black rounded-none">
-                  <div className="border-b border-black px-3 py-1 bg-white font-bold text-xs tracking-wider uppercase">
+                <div className="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                  <div className="border-b border-gray-200 px-3.5 py-1.5 bg-gray-900 text-white font-bold text-[11px] tracking-wider uppercase flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#e50914]"></span>
                     SHIP TO
                   </div>
-                  <div className="p-3 text-xs space-y-1 leading-relaxed text-gray-800">
-                    <div className="font-bold">{shipToName}</div>
-                    {shipToAddress && shipToAddress !== '-' && <div>{shipToAddress}</div>}
-                    {shipToPhone && <div>{shipToPhone}</div>}
+                  <div className="p-3.5 text-xs space-y-1.5 leading-relaxed text-gray-800">
+                    <div className="font-bold text-gray-900 text-sm">{shipToName}</div>
+                    <div className="text-gray-700">
+                      {shipToAddress && shipToAddress !== '-' ? shipToAddress : 'Alamat sesuai data penerima'}
+                    </div>
+                    {shipToPhone && <div className="text-gray-700 font-medium">{shipToPhone}</div>}
                   </div>
                 </div>
               </div>
 
-              {/* Black Info Bar */}
-              <div className="bg-black text-white text-[11px] font-bold grid grid-cols-5 text-center py-2 px-1 mb-4">
-                <div>Sales Rep.</div>
-                <div>Shipping Method</div>
-                <div>Delivery Date</div>
-                <div>Payment Terms</div>
-                <div>Due Date</div>
-              </div>
-              <div className="grid grid-cols-5 text-center text-xs py-1 px-1 mb-5 border-b border-gray-200 text-gray-800 font-medium">
-                <div>{transaksi.penginput?.username || '-'}</div>
-                <div>-</div>
-                <div>{formatDate(transaksi.tgl_transaksi)}</div>
-                <div>{paymentTerms}</div>
-                <div>{dueDate}</div>
+              {/* Info Bar */}
+              <div className="border border-gray-300 rounded-lg overflow-hidden mb-5 shadow-xs">
+                <div className="bg-gray-900 text-white text-[11px] font-bold grid grid-cols-5 text-center py-2 px-1">
+                  <div className="border-r border-gray-700">Sales Rep.</div>
+                  <div className="border-r border-gray-700">Shipping Method</div>
+                  <div className="border-r border-gray-700">Delivery Date</div>
+                  <div className="border-r border-gray-700">Payment Terms</div>
+                  <div>Due Date</div>
+                </div>
+                <div className="grid grid-cols-5 text-center text-xs py-2 px-1 bg-gray-50 text-gray-800 font-medium">
+                  <div className="border-r border-gray-200">{transaksi.penginput?.username || '-'}</div>
+                  <div className="border-r border-gray-200">-</div>
+                  <div className="border-r border-gray-200">{formatDate(transaksi.tgl_transaksi)}</div>
+                  <div className="border-r border-gray-200">{paymentTerms}</div>
+                  <div>{dueDate}</div>
+                </div>
               </div>
 
               {/* Items Table */}
-              <div className="mb-6">
+              <div className="border border-gray-300 rounded-lg overflow-hidden mb-6 shadow-xs">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="bg-[#e50914] text-white font-bold">
-                      <th className={`${tableCellPadding} text-center w-12 border-r border-red-500`}>Item</th>
-                      <th className={`${tableCellPadding} text-left border-r border-red-500`}>Description</th>
-                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500`}>QTY</th>
-                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500`}>UOM</th>
-                      <th className={`${tableCellPadding} text-right w-28 border-r border-red-500`}>Price</th>
+                    <tr className="bg-[#e50914] text-white font-bold uppercase tracking-wider text-[11px]">
+                      <th className={`${tableCellPadding} text-center w-12 border-r border-red-500/50`}>Item</th>
+                      <th className={`${tableCellPadding} text-left border-r border-red-500/50`}>Description</th>
+                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500/50`}>QTY</th>
+                      <th className={`${tableCellPadding} text-center w-16 border-r border-red-500/50`}>UOM</th>
+                      <th className={`${tableCellPadding} text-right w-28 border-r border-red-500/50`}>Price</th>
                       <th className={`${tableCellPadding} text-right w-32`}>Total Price</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {displayRows.map((detail: any, idx: number) => {
                       const actualYard = Math.max(0, toNumber(detail.jml_yard || 0) - toNumber(detail.jml_yard_retur || 0));
                       const rowTotal = actualYard * toNumber(detail.harga_satuan || 0);
@@ -427,18 +442,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                       return (
                         <tr
                           key={detail.id || idx}
-                          className={`${isGray ? 'bg-gray-100' : 'bg-white'} border-b border-gray-100`}
+                          className={isGray ? 'bg-gray-50/70' : 'bg-white'}
                         >
-                          <td className={`${tableCellPadding} text-center text-gray-700`}>{idx + 1}</td>
-                          <td className={`${tableCellPadding} font-semibold text-gray-800`}>
+                          <td className={`${tableCellPadding} text-center text-gray-500 font-medium`}>{idx + 1}</td>
+                          <td className={`${tableCellPadding} font-semibold text-gray-900`}>
                             {detail.barang?.nama_barang || detail.nama_barang || 'Kain'}
                           </td>
-                          <td className={`${tableCellPadding} text-center text-gray-700`}>{actualYard}</td>
-                          <td className={`${tableCellPadding} text-center text-gray-700`}>yard</td>
+                          <td className={`${tableCellPadding} text-center font-medium text-gray-800`}>{actualYard}</td>
+                          <td className={`${tableCellPadding} text-center text-gray-500 lowercase`}>yard</td>
                           <td className={`${tableCellPadding} text-right text-gray-700`}>
                             {toNumber(detail.harga_satuan).toLocaleString('id-ID')}
                           </td>
-                          <td className={`${tableCellPadding} text-right font-semibold text-gray-900`}>
+                          <td className={`${tableCellPadding} text-right font-bold text-gray-900`}>
                             {rowTotal.toLocaleString('id-ID')}
                           </td>
                         </tr>
@@ -451,14 +466,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                       return (
                         <tr
                           key={`empty-${i}`}
-                          className={`${isGray ? 'bg-gray-100' : 'bg-white'} border-b border-gray-100 h-7`}
+                          className={`${isGray ? 'bg-gray-50/70' : 'bg-white'} h-7`}
                         >
                           <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
                           <td className={`${tableCellPadding} text-transparent`}>-</td>
                           <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
                           <td className={`${tableCellPadding} text-center text-transparent`}>-</td>
                           <td className={`${tableCellPadding} text-right text-transparent`}>-</td>
-                          <td className={`${tableCellPadding} text-right text-gray-400`}>0</td>
+                          <td className={`${tableCellPadding} text-right text-gray-300`}>0</td>
                         </tr>
                       );
                     })}
@@ -468,24 +483,26 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
               {/* Totals Section */}
               <div className="flex justify-end mb-8">
-                <div className="w-72 sm:w-80 text-xs space-y-1.5 bg-white text-gray-900" style={{ backgroundColor: '#ffffff' }}>
-                  <div className="flex justify-between items-center py-0.5 text-gray-700 font-bold">
-                    <span>SUBTOTAL</span>
-                    <span>{subtotal.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-0.5 text-gray-700 font-bold">
-                    <span>DPP NILAI LAIN</span>
-                    <span>{dppNilaiLain.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-0.5 text-gray-700 font-bold">
-                    <span>TAX</span>
-                    <span>{tax.toLocaleString('id-ID')}</span>
+                <div className="w-72 sm:w-80 text-xs bg-white border border-gray-300 rounded-lg overflow-hidden shadow-xs">
+                  <div className="p-3.5 space-y-2">
+                    <div className="flex justify-between items-center text-gray-600 font-medium">
+                      <span className="uppercase tracking-wider text-[11px]">SUBTOTAL</span>
+                      <span className="font-bold text-gray-900">{subtotal.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-600 font-medium">
+                      <span className="uppercase tracking-wider text-[11px]">DPP NILAI LAIN</span>
+                      <span className="font-bold text-gray-900">{dppNilaiLain.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-600 font-medium">
+                      <span className="uppercase tracking-wider text-[11px]">TAX (12%)</span>
+                      <span className="font-bold text-gray-900">{tax.toLocaleString('id-ID')}</span>
+                    </div>
                   </div>
 
                   {/* Grand Total in Red Banner */}
-                  <div className="flex justify-between items-center bg-[#e50914] text-white font-extrabold px-3 py-2 text-sm mt-2 shadow-sm">
-                    <span>GRAND TOTAL</span>
-                    <span>{grandTotal.toLocaleString('id-ID')}</span>
+                  <div className="flex justify-between items-center bg-[#e50914] text-white px-4 py-2.5 shadow-sm">
+                    <span className="font-bold text-xs uppercase tracking-wider">GRAND TOTAL</span>
+                    <span className="font-black text-base tracking-tight">Rp {grandTotal.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
               </div>
@@ -494,29 +511,32 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             {/* Bottom Signatures & Bank Info */}
             <div className="mt-8 bg-white pt-2 text-gray-900" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
               <div className="flex justify-between items-end pb-6 bg-white" style={{ backgroundColor: '#ffffff' }}>
-                {/* Account Bank */}
-                <div className="text-xs text-gray-800 space-y-1">
-                  <div className="font-bold flex items-center gap-2">
-                    <span>Account Bank :</span>
-                    <span className="font-extrabold text-sm text-gray-900">PT Zea Textile Group</span>
+                {/* Account Bank Card */}
+                <div className="border border-gray-200 rounded-lg p-3.5 bg-gray-50/80 w-80 text-xs space-y-1 shadow-xs">
+                  <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Informasi Pembayaran</div>
+                  <div className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5 pt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#e50914]"></span>
+                    PT Zea Textile Group
                   </div>
                   {activeProfile?.rekening && (
-                    <div className="text-gray-600 font-medium pl-28">
+                    <div className="text-gray-700 font-semibold pt-1">
                       {activeProfile.nama_rekening ? `${activeProfile.nama_rekening} - ` : ''}
-                      {activeProfile.rekening}
+                      <span className="text-gray-900 font-mono text-sm">{activeProfile.rekening}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Signature Box */}
-                <div className="text-center w-52 text-xs">
-                  <div className="font-bold text-gray-900 mb-12">PT Zea Textile Group</div>
-                  <div className="font-bold text-gray-900">Aji Gumilang</div>
+                <div className="text-center w-56 text-xs">
+                  <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Hormat Kami,</div>
+                  <div className="font-bold text-gray-900 mb-14">PT Zea Textile Group</div>
+                  <div className="font-black text-gray-900 text-sm tracking-wide">Aji Gumilang</div>
+                  <div className="text-[11px] text-gray-500 font-medium">Direktur</div>
                 </div>
               </div>
 
               {/* Decorative Geometric Footer (Black & Red Curved Shape) */}
-              <div className="relative h-6 w-full overflow-hidden">
+              <div className="relative h-6 w-full overflow-hidden rounded-b-sm">
                 <div
                   className="absolute inset-0 bg-[#e50914]"
                   style={{

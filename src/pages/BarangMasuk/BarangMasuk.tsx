@@ -55,6 +55,7 @@ export default function BarangMasuk() {
   }, []);
 
   const handleOpenPrintModal = async (transaksiId: number) => {
+    setSelectedTransaksiForPrint(null);
     setShowPrintModal(true);
     setLoadingPrintData(true);
     try {

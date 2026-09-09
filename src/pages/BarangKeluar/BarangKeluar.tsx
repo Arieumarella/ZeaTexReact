@@ -1437,6 +1437,7 @@ export default function BarangKeluar() {
 
   // Handler untuk buka modal dan fetch data
   const handleOpenPrintModal = async (transaksiId: number) => {
+    setSelectedTransaksiForPrint(null);
     setShowPrintModal(true);
     setLoadingPrintData(true);
     try {
