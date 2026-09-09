@@ -334,7 +334,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <div className="p-3 text-xs space-y-1 leading-relaxed text-gray-800">
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">NPWP</span>
-                      <span>: {partyNpwp}</span>
+                      <span>: 1000000010816967</span>
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Company Name</span>
@@ -350,7 +350,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </div>
                     <div className="grid grid-cols-[90px_1fr]">
                       <span className="font-semibold">Email</span>
-                      <span>: {partyEmail}</span>
+                      <span>: zeatextile@gmail.com</span>
                     </div>
                   </div>
                 </div>
