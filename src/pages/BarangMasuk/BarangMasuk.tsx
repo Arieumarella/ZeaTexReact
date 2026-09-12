@@ -356,13 +356,13 @@ export default function BarangMasuk() {
           // Total Harga Transaksi / Subtotal Transaksi
           const subtotal = details.length > 0 ? Math.max(0, netBarang - discountNominal) : toNumber(item.total_transaksi);
 
-          // DPP Nilai Lain = 11/12 * Subtotal
-          const dppNilaiLain = Math.round((11 / 12) * subtotal);
+          // DPP Nilai Lain = 11/12 * Subtotal (tanpa pembulatan)
+          const dppNilaiLain = (11 / 12) * subtotal;
 
-          // PPN (11%) = 12% dari DPP Nilai Lain (setara 11% dari Subtotal)
-          const ppn = Math.round(0.12 * dppNilaiLain);
+          // PPN (11%) = 12% dari DPP Nilai Lain atau 11% dari Subtotal (tanpa pembulatan)
+          const ppn = 0.12 * dppNilaiLain;
 
-          // Total Harga = Subtotal + PPN
+          // Total Harga = Subtotal + PPN (tanpa pembulatan)
           const totalHarga = subtotal + ppn;
 
           totalSubtotalAll += subtotal;
@@ -382,7 +382,7 @@ export default function BarangMasuk() {
           });
         });
 
-        // Baris Total di baris paling bawah
+        // Baris Total di baris paling bawah (tanpa pembulatan)
         rows.push({
           "No": "",
           "Id Transaksi": "",
@@ -407,6 +407,18 @@ export default function BarangMasuk() {
           { wch: 18 }, // PPN (11%)
           { wch: 20 }, // Total Harga
         ];
+
+        // Format angka desimal di Excel agar tampil rapi tanpa pembulatan integer
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+          for (const C of [4, 5, 6, 7]) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = ws[cellRef];
+            if (cell && typeof cell.v === 'number') {
+              cell.z = '#,##0.00';
+            }
+          }
+        }
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Export Pajak");

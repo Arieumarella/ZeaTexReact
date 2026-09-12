@@ -82,10 +82,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       : toNumber(transaksi.jml_discount);
 
   const subtotal = netBarang - discountNominal;
-  // Rumus DPP Nilai Lain: (11 / 12) * Subtotal
-  const dppNilaiLain = Math.round((11 / 12) * subtotal);
-  // Tax 12% dari DPP Nilai Lain (setara 11% dari Subtotal)
-  const tax = Math.round(0.12 * dppNilaiLain);
+  // Rumus DPP Nilai Lain: (11 / 12) * Subtotal (tanpa pembulatan)
+  const dppNilaiLain = (11 / 12) * subtotal;
+  // Tax 12% dari DPP Nilai Lain (setara 11% dari Subtotal) (tanpa pembulatan)
+  const tax = 0.12 * dppNilaiLain;
   const grandTotal = subtotal + tax;
 
   const formatDate = (dateString?: string) => {
@@ -487,22 +487,22 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <div className="p-3.5 space-y-2">
                     <div className="flex justify-between items-center text-gray-600 font-medium">
                       <span className="uppercase tracking-wider text-[11px]">SUBTOTAL</span>
-                      <span className="font-bold text-gray-900">{subtotal.toLocaleString('id-ID')}</span>
+                      <span className="font-bold text-gray-900">{subtotal.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-600 font-medium">
                       <span className="uppercase tracking-wider text-[11px]">DPP NILAI LAIN</span>
-                      <span className="font-bold text-gray-900">{dppNilaiLain.toLocaleString('id-ID')}</span>
+                      <span className="font-bold text-gray-900">{dppNilaiLain.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-600 font-medium">
                       <span className="uppercase tracking-wider text-[11px]">TAX (12%)</span>
-                      <span className="font-bold text-gray-900">{tax.toLocaleString('id-ID')}</span>
+                      <span className="font-bold text-gray-900">{tax.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
 
                   {/* Grand Total in Red Banner */}
                   <div className="flex justify-between items-center bg-[#e50914] text-white px-4 py-2.5 shadow-sm">
                     <span className="font-bold text-xs uppercase tracking-wider">GRAND TOTAL</span>
-                    <span className="font-black text-base tracking-tight">Rp {grandTotal.toLocaleString('id-ID')}</span>
+                    <span className="font-black text-base tracking-tight">Rp {grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
