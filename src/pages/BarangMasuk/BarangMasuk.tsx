@@ -311,6 +311,115 @@ export default function BarangMasuk() {
     }
   };
 
+  // Fungsi export Data Pajak ke Excel berdasarkan filter tanggal aktif
+  const handleExportPajak = async () => {
+    try {
+      const params: any = { all: true };
+      if (suplier) params.supplierId = Number(suplier);
+      if (tanggalStart) params.waktuAwal = tanggalStart;
+      if (tanggalEnd) params.waktuAkhir = tanggalEnd;
+      if (searchKdBarang) params.kdBarang = searchKdBarang;
+
+      const res = await getTransaksiMasuk(params);
+      if (res && res.data) {
+        if (res.data.length === 0) {
+          toast.info("Tidak ada data transaksi yang ditemukan pada rentang filter tanggal ini.");
+          return;
+        }
+
+        const rows: any[] = [];
+        let totalSubtotalAll = 0;
+        let totalDppAll = 0;
+        let totalPpnAll = 0;
+        let totalHargaAll = 0;
+
+        const toNumber = (val: any) => Number(val || 0);
+
+        (res.data || []).forEach((item: any, idx: number) => {
+          const details = item.details || [];
+
+          const grossBeforeRetur = details.reduce(
+            (sum: number, d: any) => sum + toNumber(d.jml_yard || 0) * toNumber(d.harga_satuan || 0),
+            0
+          );
+          const totalReturNominal = details.reduce(
+            (sum: number, d: any) => sum + toNumber(d.jml_yard_retur || 0) * toNumber(d.harga_satuan || 0),
+            0
+          );
+          const netBarang = Math.max(0, grossBeforeRetur - totalReturNominal);
+
+          const discountNominal =
+            item.tipe_discount === 'persen'
+              ? (netBarang * toNumber(item.jml_discount)) / 100
+              : toNumber(item.jml_discount);
+
+          // Total Harga Transaksi / Subtotal Transaksi
+          const subtotal = details.length > 0 ? Math.max(0, netBarang - discountNominal) : toNumber(item.total_transaksi);
+
+          // DPP Nilai Lain = 11/12 * Subtotal
+          const dppNilaiLain = Math.round((11 / 12) * subtotal);
+
+          // PPN (11%) = 12% dari DPP Nilai Lain (setara 11% dari Subtotal)
+          const ppn = Math.round(0.12 * dppNilaiLain);
+
+          // Total Harga = Subtotal + PPN
+          const totalHarga = subtotal + ppn;
+
+          totalSubtotalAll += subtotal;
+          totalDppAll += dppNilaiLain;
+          totalPpnAll += ppn;
+          totalHargaAll += totalHarga;
+
+          rows.push({
+            "No": idx + 1,
+            "Id Transaksi": item.id,
+            "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
+            "Nama Pembeli": item.supplier?.nama || '',
+            "Total Harga Transaksi / Subtotal Transaksi": subtotal,
+            "DPP Nilai Lain": dppNilaiLain,
+            "PPN (11%)": ppn,
+            "Total Harga": totalHarga,
+          });
+        });
+
+        // Baris Total di baris paling bawah
+        rows.push({
+          "No": "",
+          "Id Transaksi": "",
+          "Tanggal Transaksi": "",
+          "Nama Pembeli": "TOTAL",
+          "Total Harga Transaksi / Subtotal Transaksi": totalSubtotalAll,
+          "DPP Nilai Lain": totalDppAll,
+          "PPN (11%)": totalPpnAll,
+          "Total Harga": totalHargaAll,
+        });
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+
+        // Atur lebar kolom agar dokumen Excel rapi dan mudah dibaca
+        ws['!cols'] = [
+          { wch: 6 },  // No
+          { wch: 14 }, // Id Transaksi
+          { wch: 22 }, // Tanggal Transaksi
+          { wch: 30 }, // Nama Pembeli
+          { wch: 38 }, // Total Harga Transaksi / Subtotal Transaksi
+          { wch: 20 }, // DPP Nilai Lain
+          { wch: 18 }, // PPN (11%)
+          { wch: 20 }, // Total Harga
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Export Pajak");
+        const fileRange = tanggalStart && tanggalEnd ? `_${tanggalStart}_sd_${tanggalEnd}` : '';
+        XLSX.writeFile(wb, `export-pajak-barang-masuk${fileRange}.xlsx`);
+        toast.success("Data pajak berhasil diexport ke Excel!");
+      }
+    } catch (err) {
+      console.error("Gagal export data pajak:", err);
+      toast.error("Terjadi kesalahan saat mengekspor data pajak.");
+    }
+  };
+
   // State transaksi dari server
   const [transactions, setTransactions] = useState<TransaksiItem[]>([]);
   const [totalPagesState, setTotalPagesState] = useState(1);
@@ -418,6 +527,13 @@ export default function BarangMasuk() {
               onClick={handleExportExcel}
             >
               Export Excel
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition font-medium"
+              onClick={handleExportPajak}
+            >
+              Export Data Pajak
             </button>
           </div>
           <div className="mb-4 flex items-center gap-2">
