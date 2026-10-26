@@ -113,6 +113,21 @@ function getPhones(store: Partial<StoreProfile> | null | undefined): string {
     .join(" / ");
 }
 
+function fitText(pdf: JsPdf, text: string, maxWidth: number): string {
+  if (pdf.getTextWidth(text) <= maxWidth) return text;
+
+  let truncated = text;
+  while (truncated.length > 0) {
+    const next = truncated.slice(0, -1).trimEnd();
+    if (pdf.getTextWidth(`${next}...`) <= maxWidth) {
+      return next ? `${next}...` : "...";
+    }
+    truncated = next;
+  }
+
+  return "...";
+}
+
 function safeFileName(value: string): string {
   return value
     .replace(/[\\/:*?"<>|]+/g, "-")
@@ -238,11 +253,11 @@ function drawTableHeader(pdf: JsPdf, top: number): void {
 
 function getTableColumns() {
   const noWidth = 10;
-  const codeWidth = 24;
-  const nameWidth = 68;
+  const codeWidth = 30;
+  const nameWidth = 66;
   const yardWidth = 22;
   const rolWidth = 20;
-  const noteWidth = 38;
+  const noteWidth = 34;
 
   const no = MARGIN_X;
   const code = no + noWidth;
@@ -588,7 +603,11 @@ export async function createSuratJalanPdf({
 
     pdf.setFontSize(7.2);
     pdf.setTextColor(...COLORS.muted);
-    pdf.text(code, columns.code + 2, textTop);
+    pdf.text(
+      fitText(pdf, code, columns.codeWidth - 6),
+      columns.code + 2,
+      textTop,
+    );
 
     pdf.setFontSize(7.8);
     pdf.setTextColor(...COLORS.navy);
