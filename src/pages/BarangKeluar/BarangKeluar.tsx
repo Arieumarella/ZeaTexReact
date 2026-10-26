@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -9,6 +8,7 @@ import PageMeta from "../../components/common/PageMeta";
 import { useNavigate } from "react-router-dom";
 import { deleteTransaksiKeluar, getTransaksiKeluar, getAllCustomers, getTransaksiKeluarById, sendNotaFile, getStoreProfile, updateTransaksiKeluar } from "../../service/barangKeluarService";
 import { getDetailPelanggan } from "../../service/pelangganService";
+import { downloadSuratJalanPdf } from "../../utils/suratJalanPdf";
 import {
   Table,
   TableHeader,
@@ -963,9 +963,6 @@ const printStyles = `
 `;
 
 const suratJalanStyles = `
-  .print-sj-wrapper {
-    display: none;
-  }
   .print-content-sj {
     width: 100%;
     max-width: 820px;
@@ -1137,31 +1134,13 @@ const suratJalanStyles = `
     font-weight: 700;
     color: #0f172a;
   }
+  .print-content-sj .sj-notice ul,
   .print-content-sj .sj-notice ol {
     margin: 0 0 12px 18px;
     padding: 0;
   }
   .print-content-sj .sj-notice li {
     margin: 2px 0;
-  }
-  .print-content-sj .sj-warning {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1.5px solid #dc2626;
-    border-radius: 10px;
-    background: #fef2f2;
-    color: #991b1b;
-    font-size: 12px;
-    line-height: 1.5;
-  }
-  .print-content-sj .sj-warning strong {
-    white-space: nowrap;
-    font-weight: 800;
-  }
-  .print-content-sj .sj-warning p {
-    margin: 0;
   }
   .print-content-sj .sj-signatures {
     display: grid;
@@ -1182,126 +1161,211 @@ const suratJalanStyles = `
     color: #64748b;
     letter-spacing: 0.02em;
   }
-  @media print {
-    #root {
-      display: none !important;
-    }
-    .print-sj-wrapper {
-      display: block !important;
-      position: static !important;
-      width: 100% !important;
-      margin: 0 !important;
-      visibility: visible !important;
-    }
-    .print-sj-wrapper * {
-      visibility: visible !important;
-    }
-    .print-content-sj {
-      max-width: 100% !important;
-      width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      font-size: 10px;
-    }
-    .print-content-sj .sj-header {
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-    }
-    .print-content-sj .sj-brand {
-      gap: 12px;
-      min-width: 220px;
-    }
-    .print-content-sj .sj-logo {
-      width: 64px;
-      max-height: 54px;
-    }
-    .print-content-sj .sj-brand h2 {
-      font-size: 16px;
-    }
-    .print-content-sj .sj-brand p {
-      font-size: 9px;
-    }
-    .print-content-sj .sj-doc {
-      min-width: 190px;
-    }
-    .print-content-sj .sj-label {
-      font-size: 8px;
-    }
-    .print-content-sj .sj-doc h1 {
-      font-size: 22px;
-      margin: 2px 0 6px;
-    }
-    .print-content-sj .sj-doc p {
-      font-size: 9px;
-    }
-    .print-content-sj .sj-doc p strong {
-      min-width: 74px;
-    }
-    .print-content-sj .sj-info-grid {
-      gap: 8px;
-      margin: 10px 0;
-    }
-    .print-content-sj .sj-info-box {
-      padding: 8px 10px;
-      border-radius: 6px;
-    }
-    .print-content-sj .sj-section-title {
-      font-size: 8px;
-      margin-bottom: 4px;
-    }
-    .print-content-sj .sj-info-box strong {
-      font-size: 11px;
-    }
-    .print-content-sj .sj-info-box p,
-    .print-content-sj .sj-info-row {
-      font-size: 9px;
-    }
-    .print-content-sj .sj-table {
-      font-size: 9px;
-    }
-    .print-content-sj .sj-table thead th {
-      padding: 6px 5px;
-      font-size: 8px;
-    }
-    .print-content-sj .sj-table tbody td,
-    .print-content-sj .sj-table tfoot td {
-      padding: 5px;
-    }
-    .print-content-sj .sj-table thead {
-      display: table-header-group;
-    }
-    .print-content-sj .sj-table tbody tr {
-      page-break-inside: avoid;
-    }
-    .print-content-sj .sj-header,
-    .print-content-sj .sj-info-grid,
-    .print-content-sj .sj-notice,
-    .print-content-sj .sj-signatures {
-      page-break-inside: avoid;
-    }
-    .print-content-sj .sj-notice {
-      margin: 10px 0;
-      font-size: 9px;
-    }
-    .print-content-sj .sj-notice ol {
-      margin-bottom: 8px;
-    }
-    .print-content-sj .sj-warning {
-      padding: 7px 8px;
-      border-radius: 6px;
-      font-size: 9px;
-    }
-    .print-content-sj .sj-signatures {
-      margin-top: 24px;
-      gap: 14px;
-      font-size: 9px;
-    }
-    .print-content-sj .sj-sign-space {
-      height: 46px;
-    }
+  .print-content-sj .sj-accent-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #0f172a 0%, #0f766e 55%, #0ea5e9 100%);
+  }
+  .print-content-sj {
+    position: relative;
+    overflow: hidden;
+    padding: 32px 36px;
+  }
+  .print-content-sj .sj-header {
+    padding-top: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 24px;
+  }
+  .print-content-sj .sj-brand {
+    align-items: flex-start;
+    min-width: 0;
+    gap: 14px;
+  }
+  .print-content-sj .sj-logo {
+    width: 72px;
+    max-height: 60px;
+    margin-top: 2px;
+  }
+  .print-content-sj .sj-company h2 {
+    margin: 0 0 5px;
+    font-size: 19px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  .print-content-sj .sj-company p {
+    margin: 3px 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #64748b;
+  }
+  .print-content-sj .sj-doc-card {
+    min-width: 228px;
+    padding: 14px 16px 13px 18px;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #0f766e;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+  .print-content-sj .sj-doc-eyebrow {
+    display: block;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #0f766e;
+  }
+  .print-content-sj .sj-doc-card h1 {
+    margin: 3px 0 6px;
+    font-size: 23px;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .print-content-sj .sj-doc-no {
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+  }
+  .print-content-sj .sj-doc-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 10px;
+    color: #475569;
+  }
+  .print-content-sj .sj-doc-meta span {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .print-content-sj .sj-doc-meta strong {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .print-content-sj .sj-info-grid {
+    grid-template-columns: 1.22fr 0.88fr;
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .print-content-sj .sj-info-box {
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .print-content-sj .sj-info-box-customer {
+    border-top: 3px solid #0f766e;
+  }
+  .print-content-sj .sj-info-box-shipping {
+    border-top: 3px solid #0f172a;
+  }
+  .print-content-sj .sj-section-title {
+    margin-bottom: 7px;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: #0f766e;
+  }
+  .print-content-sj .sj-info-box-customer strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 14px;
+  }
+  .print-content-sj .sj-info-box p {
+    margin: 2px 0 0;
+  }
+  .print-content-sj .sj-info-row {
+    padding: 4px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 10.5px;
+  }
+  .print-content-sj .sj-info-row strong {
+    font-size: 10.5px;
+  }
+  .print-content-sj .sj-table-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 7px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .print-content-sj .sj-table-heading span:last-child {
+    font-size: 9px;
+    font-weight: 500;
+    color: #94a3b8;
+  }
+  .print-content-sj .sj-table thead th {
+    padding: 9px 8px;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    background: #0f172a;
+  }
+  .print-content-sj .sj-table tbody td {
+    padding: 8px;
+    font-size: 10.5px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .print-content-sj .sj-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+  .print-content-sj .sj-table tfoot td {
+    padding: 8px;
+    font-size: 10.5px;
+  }
+  .print-content-sj .sj-notice {
+    padding: 14px 16px;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 10px;
+    background: #fffbeb;
+    color: #78350f;
+  }
+  .print-content-sj .sj-notice-title {
+    color: #92400e;
+  }
+  .print-content-sj .sj-signatures {
+    margin-top: 34px;
+    gap: 22px;
+    font-size: 10.5px;
+  }
+  .print-content-sj .sj-sign-role {
+    font-weight: 600;
+    color: #334155;
+  }
+  .print-content-sj .sj-sign-space {
+    height: 54px;
+  }
+  .print-content-sj .sj-sign-line {
+    display: block;
+    width: 82%;
+    margin: 0 auto;
+    border-top: 1px solid #cbd5e1;
+  }
+  .print-content-sj .sj-sign-caption {
+    display: block;
+    margin-top: 5px;
+    font-size: 8.5px;
+    color: #94a3b8;
+  }
+  .print-content-sj .sj-doc-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 28px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 9px;
+    color: #94a3b8;
   }
 `;
 
@@ -1678,32 +1742,45 @@ export default function BarangKeluar() {
 
     return (
       <div className="print-content-sj">
+        <div className="sj-accent-line" />
         <header className="sj-header">
           <div className="sj-brand">
             <img src="/images/logo aji transparant.svg" alt="Zea Textile" className="sj-logo" />
-            <div>
+            <div className="sj-company">
               <h2>{storeProfile?.nama_toko || 'Zea Textile'}</h2>
               {storeProfile?.alamat && <p>{storeProfile.alamat}</p>}
-              {nomorTelepon && <p>{nomorTelepon}</p>}
+              {nomorTelepon && <p>Telp. {nomorTelepon}</p>}
             </div>
           </div>
-          <div className="sj-doc">
-            <span className="sj-label">Dokumen Pengiriman</span>
+          <div className="sj-doc-card">
+            <span className="sj-doc-eyebrow">Dokumen Pengiriman</span>
             <h1>SURAT JALAN</h1>
-            <p><strong>No.</strong> {nomorSuratJalan}</p>
-            <p><strong>Tanggal</strong> {formatDateWithMonth(transaksi.tgl_transaksi)}</p>
-            <p><strong>No. Transaksi</strong> #{transaksi.id}</p>
+            <div className="sj-doc-no">{nomorSuratJalan}</div>
+            <div className="sj-doc-meta">
+              <span>
+                <strong>Tanggal</strong>
+                {formatDateWithMonth(transaksi.tgl_transaksi)}
+              </span>
+              <span>
+                <strong>Ref</strong>
+                #{transaksi.id}
+              </span>
+            </div>
           </div>
         </header>
 
         <section className="sj-info-grid">
-          <div className="sj-info-box">
-            <span className="sj-section-title">Penerima / Pembeli</span>
+          <div className="sj-info-box sj-info-box-customer">
+            <span className="sj-section-title">Kepada</span>
             <strong>{pelanggan?.nama || transaksi.pelanggan?.nama || '-'}</strong>
-            <p>{pelanggan?.no_tlp || transaksi.pelanggan?.no_tlp || '-'}</p>
+            <p>
+              {pelanggan?.no_tlp || transaksi.pelanggan?.no_tlp
+                ? `Telp. ${pelanggan?.no_tlp || transaksi.pelanggan?.no_tlp}`
+                : 'Telp. -'}
+            </p>
             <p className="sj-address">{alamatPenerima || '-'}</p>
           </div>
-          <div className="sj-info-box">
+          <div className="sj-info-box sj-info-box-shipping">
             <span className="sj-section-title">Informasi Pengiriman</span>
             <div className="sj-info-row">
               <span>Ekspedisi</span>
@@ -1721,6 +1798,10 @@ export default function BarangKeluar() {
         </section>
 
         <section className="sj-table-section">
+          <div className="sj-table-heading">
+            <span>Rincian Barang</span>
+            <span>{details.length} item</span>
+          </div>
           <table className="sj-table">
             <thead>
               <tr>
@@ -1761,34 +1842,38 @@ export default function BarangKeluar() {
         </section>
 
         <section className="sj-notice">
-          <p className="sj-notice-title">Perhatian:</p>
-          <ol>
-            <li>Surat Jalan Ini Merupakan Bukti Resmi Penerimaan Barang.</li>
-            <li>Surat Jalan Ini Bukan Bukti Penjualan.</li>
-          </ol>
-          <div className="sj-warning">
-            <strong>PERHATIAN !!!</strong>
-            <p>Penukaran Barang Riject / Cacat Pabrik Maximal 7 hari (Dengan syarat belum dipotong).</p>
-          </div>
+          <p className="sj-notice-title">Perhatian</p>
+          <ul>
+            <li>Surat Jalan ini merupakan bukti resmi penerimaan barang, bukan bukti penjualan.</li>
+            <li>Penukaran barang reject / cacat pabrik maksimal 7 hari dengan syarat belum dipotong.</li>
+          </ul>
         </section>
 
         <section className="sj-signatures">
           <div>
-            <span>Penerima/Pembeli</span>
+            <span className="sj-sign-role">Penerima / Pembeli</span>
             <div className="sj-sign-space"></div>
-            <span className="sj-sign-line">(...................................)</span>
+            <span className="sj-sign-line"></span>
+            <span className="sj-sign-caption">Nama & Tanda Tangan</span>
           </div>
           <div>
-            <span>Bagian Pengiriman</span>
+            <span className="sj-sign-role">Bagian Pengiriman</span>
             <div className="sj-sign-space"></div>
-            <span className="sj-sign-line">(...................................)</span>
+            <span className="sj-sign-line"></span>
+            <span className="sj-sign-caption">Nama & Tanda Tangan</span>
           </div>
           <div>
-            <span>Petugas Gudang</span>
+            <span className="sj-sign-role">Petugas Gudang</span>
             <div className="sj-sign-space"></div>
-            <span className="sj-sign-line">(...................................)</span>
+            <span className="sj-sign-line"></span>
+            <span className="sj-sign-caption">Nama & Tanda Tangan</span>
           </div>
         </section>
+
+        <footer className="sj-doc-footer">
+          <span>Dokumen ini dihasilkan otomatis oleh sistem {storeProfile?.nama_toko || 'Zea Textile'}.</span>
+          <span>{nomorSuratJalan}</span>
+        </footer>
       </div>
     );
   };
@@ -1972,6 +2057,7 @@ export default function BarangKeluar() {
   const [selectedTransaksiForSJ, setSelectedTransaksiForSJ] = useState<any>(null);
   const [selectedPelangganForSJ, setSelectedPelangganForSJ] = useState<any>(null);
   const [loadingSJData, setLoadingSJData] = useState(false);
+  const [downloadingSJ, setDownloadingSJ] = useState(false);
   const [expedisi, setExpedisi] = useState('');
   const [alamatSource, setAlamatSource] = useState<'db' | 'manual'>('db');
   const [manualAlamat, setManualAlamat] = useState('');
@@ -2041,14 +2127,34 @@ export default function BarangKeluar() {
   };
 
   const closeSuratJalanModal = () => {
-    if (loadingSJData) return;
+    if (loadingSJData || downloadingSJ) return;
     setShowSuratJalanModal(false);
   };
 
-  const handlePrintSuratJalan = () => {
+  const handleDownloadSuratJalan = async () => {
     if (!selectedTransaksiForSJ) return toast.error('Data transaksi belum tersedia');
-    if (!expedisi.trim()) return toast.warning('Ekspedisi wajib diisi sebelum mencetak surat jalan.');
-    window.print();
+    if (!expedisi.trim()) return toast.warning('Ekspedisi wajib diisi sebelum mengunduh surat jalan.');
+
+    setDownloadingSJ(true);
+    try {
+      const alamat = alamatSource === 'manual'
+        ? manualAlamat
+        : String(selectedPelangganForSJ?.alamat || '');
+
+      await downloadSuratJalanPdf({
+        transaksi: selectedTransaksiForSJ,
+        pelanggan: selectedPelangganForSJ,
+        store: storeProfile,
+        expedisi,
+        alamat,
+      });
+      toast.success('Surat jalan berhasil diunduh.');
+    } catch (err) {
+      console.error('Gagal membuat PDF surat jalan', err);
+      toast.error('Gagal membuat PDF surat jalan.');
+    } finally {
+      setDownloadingSJ(false);
+    }
   };
 
   // (Removed unused buildWhatsAppMessage helper — caption is fixed now)
@@ -2485,7 +2591,7 @@ export default function BarangKeluar() {
                           )}
                           <button className="px-1.5 py-0.5 text-xs bg-orange-500 text-white rounded mr-1 hover:bg-orange-600" onClick={() => navigate(`/retur-keluar/${item.id}`)}>Retur</button>
                           <button className="px-1.5 py-0.5 text-xs bg-green-500 text-white rounded mr-1 hover:bg-green-600" onClick={() => handleOpenPrintModal(item.id)}>Cetak Nota</button>
-                          <button className="px-1.5 py-0.5 text-xs bg-sky-600 text-white rounded mr-1 hover:bg-sky-700 whitespace-nowrap" onClick={() => handleOpenSuratJalanModal(item.id)}>Cetak Surat Jalan</button>
+                          <button className="px-1.5 py-0.5 text-xs bg-sky-600 text-white rounded mr-1 hover:bg-sky-700 whitespace-nowrap" onClick={() => handleOpenSuratJalanModal(item.id)}>Surat Jalan PDF</button>
                           <button className="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600" onClick={() => handleDeleteTransaksi(item.id)}>Hapus</button>
                         </TableCell>
                       </TableRow>
@@ -2766,18 +2872,17 @@ export default function BarangKeluar() {
         </div>
       )}
 
-      {/* Modal Cetak Surat Jalan */}
+      {/* Modal Unduh Surat Jalan */}
       {showSuratJalanModal && (
-        <>
         <div className="modal-overlay fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4">
-          <style>{printStyles}{suratJalanStyles}</style>
+          <style>{suratJalanStyles}</style>
           <div className="modal-content bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[92vh] overflow-y-auto">
             <div className="modal-header flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Cetak Surat Jalan</h2>
-                <p className="text-sm text-gray-500">Isi ekspedisi dan pilih sumber alamat penerima sebelum mencetak.</p>
+                <h2 className="text-xl font-bold text-gray-800">Unduh Surat Jalan</h2>
+                <p className="text-sm text-gray-500">Isi ekspedisi dan pilih sumber alamat penerima, lalu unduh sebagai PDF.</p>
               </div>
-              <button onClick={closeSuratJalanModal} disabled={loadingSJData} className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50">&times;</button>
+              <button onClick={closeSuratJalanModal} disabled={loadingSJData || downloadingSJ} className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50">&times;</button>
             </div>
 
             {loadingSJData && (
@@ -2848,7 +2953,7 @@ export default function BarangKeluar() {
                   </div>
                 </div>
 
-                <div className="print-content bg-slate-100 p-6">
+                <div className="sj-preview-wrap bg-slate-100 p-6">
                   <div className="mx-auto max-w-3xl">
                     {renderSuratJalan(
                       selectedTransaksiForSJ,
@@ -2863,25 +2968,13 @@ export default function BarangKeluar() {
             )}
 
             <div className="modal-footer flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button onClick={closeSuratJalanModal} disabled={loadingSJData} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50">Tutup</button>
-              <button onClick={handlePrintSuratJalan} disabled={loadingSJData} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">Print</button>
+              <button onClick={closeSuratJalanModal} disabled={loadingSJData || downloadingSJ} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50">Tutup</button>
+              <button onClick={handleDownloadSuratJalan} disabled={loadingSJData || downloadingSJ} className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                {downloadingSJ ? 'Membuat PDF...' : 'Download PDF'}
+              </button>
             </div>
           </div>
         </div>
-
-        {!loadingSJData && selectedTransaksiForSJ && createPortal(
-          <div className="print-sj-wrapper" aria-hidden="true">
-            <style>{printStyles}{suratJalanStyles}</style>
-            {renderSuratJalan(
-              selectedTransaksiForSJ,
-              selectedPelangganForSJ,
-              expedisi,
-              alamatSource === 'manual' ? manualAlamat : String(selectedPelangganForSJ?.alamat || '')
-            )}
-          </div>,
-          document.body
-        )}
-        </>
       )}
 
       {/* ToastContainer is handled globally in main.tsx */}
