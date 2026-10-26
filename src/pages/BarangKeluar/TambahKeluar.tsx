@@ -93,7 +93,7 @@ export default function TambahKeluar() {
       toast.success('Data barang keluar berhasil disimpan!');
 
       // Clear form
-      setBarangList([{ idBarang: null, namaBarang: "", kodeBarang: "", jumlahYard: "", jumlahRol: "", hargaSatuan: "" }]);
+      setBarangList([{ namaBarang: "", kodeBarang: "", jumlahYard: "", jumlahRol: "", hargaSatuan: "" }]);
       setTanggal("");
       setCustomer("");
       setSelectedCustomerName("");

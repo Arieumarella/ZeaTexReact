@@ -1425,6 +1425,68 @@ export default function BarangKeluar() {
     }
   };
 
+  // Fungsi export nota transaksi (satu baris = satu nota) berdasarkan pelanggan terpilih
+  const handleExportNotaTransaksi = async () => {
+    if (!customer) {
+      toast.warning("Harus memilih pelanggan terlebih dahulu untuk export nota transaksi.");
+      return;
+    }
+
+    try {
+      const res = await getTransaksiKeluar({
+        all: true,
+        customerId: Number(customer),
+      });
+
+      if (!res) return;
+
+      if (!res.data || res.data.length === 0) {
+        toast.info("Tidak ada data nota transaksi untuk pelanggan ini.");
+        return;
+      }
+
+      const customerName =
+        selectedCustomerName ||
+        customers.find(c => String(c.id) === customer)?.nama ||
+        "pelanggan";
+      const safeCustomerName = customerName.replace(/[\\/:*?"<>|]/g, "-");
+
+      const rows = res.data.map((item, idx) => ({
+        No: idx + 1,
+        "Id Transaksi": item.id,
+        "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
+        "Nama Pelanggan": item.pelanggan?.nama || customerName,
+        "Total Harga": Number(item.total_transaksi) || 0,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 14 }, // Id Transaksi
+        { wch: 22 }, // Tanggal Transaksi
+        { wch: 32 }, // Nama Pelanggan
+        { wch: 18 }, // Total Harga
+      ];
+
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: 4 });
+        const cell = ws[cellRef];
+        if (cell && typeof cell.v === 'number') {
+          cell.z = '#,##0';
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Nota Transaksi");
+      XLSX.writeFile(wb, `nota-transaksi-${safeCustomerName}.xlsx`);
+      toast.success("Data nota transaksi berhasil diexport ke Excel!");
+    } catch (err) {
+      console.error("Gagal export nota transaksi:", err);
+      toast.error("Terjadi kesalahan saat mengekspor nota transaksi.");
+    }
+  };
+
   // State transaksi dari server
   const [transactions, setTransactions] = useState<any[]>([]);
   const [totalPagesState, setTotalPagesState] = useState(1);
@@ -1685,6 +1747,13 @@ export default function BarangKeluar() {
               onClick={handleExportExcel}
             >
               Export Excel
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition font-medium"
+              onClick={handleExportNotaTransaksi}
+            >
+              Export Nota Transaksi
             </button>
           </div>
           <div className="mb-4 flex items-center gap-2">
