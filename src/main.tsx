@@ -7,6 +7,7 @@ import "swiper/swiper-bundle.css";
 import "flatpickr/dist/flatpickr.css";
 import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
+import ErrorBoundary from "./components/common/ErrorBoundary.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,7 +18,9 @@ createRoot(document.getElementById("root")!).render(
     <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />
     <ThemeProvider>
       <AppWrapper>
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </AppWrapper>
     </ThemeProvider>
   </StrictMode>,

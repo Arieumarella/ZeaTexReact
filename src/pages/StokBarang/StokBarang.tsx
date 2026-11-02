@@ -16,6 +16,7 @@ import {
 import { Modal } from "../../components/ui/modal";
 import { getAllStokBarang, getDetilKeluar, getDetilMasuk, getDetilSisa, type StokBarang } from "../../service/stokBarangService";
 import { updateBarang } from "../../service/barangService";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -207,6 +208,7 @@ export default function StokBarang() {
       }
     } catch (err) {
       console.error("Gagal export excel:", err);
+      toast.error(getErrorMessage(err, "Gagal mengekspor data stok barang."));
     }
   };
 

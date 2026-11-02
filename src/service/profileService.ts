@@ -1,5 +1,10 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import {
+  getApiErrorMessage,
+  getErrorMessage,
+  isInvalidTokenMessage,
+} from '../utils/errorMessage';
 
 export interface ProfileData {
   id: number;
@@ -21,16 +26,17 @@ export async function getProfile(): Promise<ProfileData | null> {
       method: 'GET',
       headers: getAuthHeaders()
     });
-    const data = await res.json();
-    if (!res.ok || !data.status) {
-      toast.error(data.message || 'Gagal mengambil data profile.');
-      if (data.message === 'Invalid token') window.location.replace('/');
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal mengambil data profile.');
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) window.location.replace('/');
       return null;
     }
     return data.data || null;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat mengambil profile.');
+    toast.error(getErrorMessage(err, 'Gagal mengambil data profile.'));
     return null;
   }
 }
@@ -43,17 +49,18 @@ export async function updateProfile(payload: Partial<ProfileData>): Promise<{ st
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
-    if (!res.ok || !data.status) {
-      toast.error(data.message || 'Gagal memperbarui profile.');
-      if (data.message === 'Invalid token') window.location.replace('/');
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal memperbarui profile.');
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) window.location.replace('/');
       return data;
     }
-    toast.success(data.message || 'Profile berhasil diperbarui.');
+    toast.success(data?.message || 'Profile berhasil diperbarui.');
     return data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat memperbarui profile.');
+    toast.error(getErrorMessage(err, 'Gagal memperbarui profile.'));
     return null;
   }
 }

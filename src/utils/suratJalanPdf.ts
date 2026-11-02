@@ -35,6 +35,7 @@ export interface SuratJalanPdfOptions {
   store?: Partial<StoreProfile> | null;
   expedisi: string;
   alamat: string;
+  tanggal?: string | null;
 }
 
 interface LoadedLogo {
@@ -319,6 +320,7 @@ export async function createSuratJalanPdf({
   store,
   expedisi,
   alamat,
+  tanggal,
 }: SuratJalanPdfOptions): Promise<JsPdf> {
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF({
@@ -339,7 +341,7 @@ export async function createSuratJalanPdf({
     String(pelanggan?.no_tlp || transaksi.pelanggan?.no_tlp || "-").trim() ||
     "-";
   const customerAddress = String(alamat || "").trim() || "-";
-  const dateText = formatDateId(transaksi.tgl_transaksi);
+  const dateText = formatDateId(tanggal || transaksi.tgl_transaksi);
   const expeditionText = String(expedisi || "").trim() || "-";
   const totalYard = details.reduce(
     (total, detail) => total + toNumber(detail.jml_yard),

@@ -14,6 +14,7 @@ import {
   TableCell,
 } from "../../components/ui/table";
 import { getAllSuppliers, Supplier, getTransaksiMasuk, TransaksiItem, deleteTransaksiMasuk, getTransaksiMasukById, updateTransaksiMasuk } from '../../service/barangMasuk';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 // Helper function to format date with month name
 const formatDateWithMonth = (dateString: string): string => {
@@ -99,12 +100,10 @@ export default function BarangMasuk() {
         if (listRes && listRes.data) {
           setTransactions(listRes.data);
         }
-      } else {
-        toast.error(res?.message || "Gagal mengunggah nota.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Terjadi kesalahan saat mengunggah nota.");
+      toast.error(getErrorMessage(err, "Gagal mengunggah nota."));
     } finally {
       setUploading(false);
     }
@@ -161,12 +160,10 @@ export default function BarangMasuk() {
             if (listRes && listRes.data) {
               setTransactions(listRes.data);
             }
-          } else {
-            toast.error(res?.message || "Gagal menghapus nota.");
           }
         } catch (err) {
           console.error(err);
-          toast.error("Terjadi kesalahan saat menghapus nota.");
+          toast.error(getErrorMessage(err, "Gagal menghapus nota."));
         } finally {
           setUploading(false);
         }
@@ -275,6 +272,7 @@ export default function BarangMasuk() {
       }
     } catch (err) {
       console.error("Gagal export excel:", err);
+      toast.error(getErrorMessage(err, "Gagal mengekspor data barang masuk."));
     }
   };
 

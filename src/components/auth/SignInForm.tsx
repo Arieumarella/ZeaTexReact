@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login } from "../../service/authService";
+import { getErrorMessage } from "../../utils/errorMessage";
 import { Link } from "react-router";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
@@ -31,14 +32,23 @@ export default function SignInForm() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 setError("");
+                if (!username.trim() || !password) {
+                  setError("Username dan password wajib diisi.");
+                  return;
+                }
                 setLoading(true);
-                const result = await login(username, password);
-                setLoading(false);
-                if (result.status) {
-                  // Redirect ke halaman utama atau dashboard
-                  window.location.href = "/home";
-                } else {
-                  setError(result.message || "Login gagal");
+                try {
+                  const result = await login(username.trim(), password);
+                  if (result.status) {
+                    // Redirect ke halaman utama atau dashboard
+                    window.location.href = "/home";
+                  } else {
+                    setError(result.message || "Login gagal. Silakan coba lagi.");
+                  }
+                } catch (err) {
+                  setError(getErrorMessage(err, "Login gagal. Silakan coba lagi."));
+                } finally {
+                  setLoading(false);
                 }
               }}
             >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
@@ -44,14 +44,12 @@ export default function ManajemenUser() {
           setData([]);
           setTotalPages(1);
           setError('Gagal mengambil data user');
-          toast.error('Gagal mengambil data user');
         }
       })
       .catch(() => {
         setError('Gagal mengambil data user');
         setData([]);
         setTotalPages(1);
-        toast.error('Gagal mengambil data user');
       })
       .finally(() => setLoading(false));
   }, [page]);
@@ -161,8 +159,6 @@ export default function ManajemenUser() {
                                         setError('Gagal mengambil data user');
                                       }
                                     }).finally(() => setLoading(false));
-                                  } else {
-                                    toast.error(res.message || 'Gagal menghapus user');
                                   }
                                 }
                               }}

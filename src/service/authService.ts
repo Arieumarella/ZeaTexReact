@@ -1,5 +1,6 @@
 // src/service/authService.ts
 import { API_BASE } from './apiHelper';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export async function login(username: string, password: string): Promise<{ status: boolean; token?: string; role?: string; id_toko?: number; message?: string }> {
   try {
@@ -29,10 +30,10 @@ export async function login(username: string, password: string): Promise<{ statu
 
       return { status: true, token: data.token, role: data.role, id_toko: tokoId };
     } else {
-      return { status: false, message: data.message || 'Login gagal' };
+      return { status: false, message: data.message || 'Login gagal. Periksa username dan password Anda.' };
     }
   } catch (error) {
-    return { status: false, message: 'Network error' };
+    return { status: false, message: getErrorMessage(error, 'Login gagal. Silakan coba lagi.') };
   }
 }
 

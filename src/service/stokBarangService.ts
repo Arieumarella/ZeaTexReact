@@ -1,5 +1,6 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export interface StokBarang {
   id: number;
@@ -55,7 +56,7 @@ export async function getAllStokBarang(
       totalPages: data.totalPages,
     };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching stok barang:', error);
     return { status: false, data: [], page: 1, total: 0, totalPages: 0 };
   }
@@ -77,9 +78,9 @@ export async function getStokBarangById(id: number): Promise<{ status: boolean; 
     }
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching stok barang detail:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -99,9 +100,9 @@ export async function getDetilMasukKeluar(id: number | string): Promise<{ status
     }
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching detil masuk/keluar:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -121,9 +122,9 @@ export async function getDetilKeluar(id: number | string): Promise<{ status: boo
     }
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching detil keluar:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -143,9 +144,9 @@ export async function getDetilMasuk(id: number | string): Promise<{ status: bool
     }
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching detil masuk:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -165,9 +166,9 @@ export async function getDetilSisa(id: number | string): Promise<{ status: boole
     }
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error fetching detil sisa stok:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -194,9 +195,9 @@ export async function createStokBarang(payload: {
     toast.success('Stok barang berhasil ditambahkan!');
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error creating stok barang:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -221,9 +222,9 @@ export async function updateStokBarang(
     toast.success('Stok barang berhasil diubah!');
     return { status: true, data: data.data };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error updating stok barang:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -244,9 +245,9 @@ export async function deleteStokBarang(id: number): Promise<{ status: boolean; m
     toast.success('Stok barang berhasil dihapus!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     console.error('Error deleting stok barang:', error);
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 

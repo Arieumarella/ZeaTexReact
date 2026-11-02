@@ -6,6 +6,7 @@ import PageMeta from '../../components/common/PageMeta';
 import { toast, ToastContainer } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { getTransaksiKeluarById, createReturKeluar } from '../../service/barangKeluarService';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const spinnerHideStyles = `
   input[type="number"]::-webkit-outer-spin-button,
@@ -57,7 +58,6 @@ export default function ReturKeluar() {
         const tid = Number(id);
         const t = await getTransaksiKeluarById(tid);
         if (!t) {
-          toast.error('Gagal mengambil data transaksi');
           if (mounted) setLoading(false);
           return;
         }
@@ -83,7 +83,7 @@ export default function ReturKeluar() {
         }
       } catch (err) {
         console.error(err);
-        toast.error('Terjadi kesalahan jaringan');
+        toast.error(getErrorMessage(err, 'Gagal mengambil data transaksi.'));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -139,16 +139,14 @@ export default function ReturKeluar() {
 
       const data = await createReturKeluar(transaksi.id, payload);
       if (!data || !data.status) {
-        toast.error((data && data.message) || 'Gagal menyimpan retur');
         return;
       }
-      toast.success('Retur berhasil disimpan');
       setTimeout(() => {
         navigate('/barang-keluar');
       }, 1500);
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan saat menyimpan retur');
+      toast.error(getErrorMessage(err, 'Gagal menyimpan retur.'));
     } finally {
       setSubmitting(false);
     }

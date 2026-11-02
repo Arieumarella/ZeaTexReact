@@ -6,6 +6,7 @@ import PageMeta from '../../components/common/PageMeta';
 import { toast, ToastContainer } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { getTransaksiMasukById, createRetur } from '../../service/barangMasuk';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const spinnerHideStyles = `
   input[type="number"]::-webkit-outer-spin-button,
@@ -57,7 +58,6 @@ export default function ReturMasuk() {
         const tid = Number(id);
         const t = await getTransaksiMasukById(tid);
         if (!t) {
-          toast.error('Gagal mengambil data transaksi');
           if (mounted) setLoading(false);
           return;
         }
@@ -83,7 +83,7 @@ export default function ReturMasuk() {
         }
       } catch (err) {
         console.error(err);
-        toast.error('Terjadi kesalahan jaringan');
+        toast.error(getErrorMessage(err, 'Gagal mengambil data transaksi.'));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -139,17 +139,15 @@ export default function ReturMasuk() {
 
       const data = await createRetur(transaksi.id, payload);
       if (!data || !data.status) {
-        toast.error((data && data.message) || 'Gagal menyimpan retur');
         return;
       }
-      toast.success('Retur berhasil disimpan');
       setTimeout(() => {
         navigate('/barang-masuk');
       }, 1500);
 
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan saat menyimpan retur');
+      toast.error(getErrorMessage(err, 'Gagal menyimpan retur.'));
     } finally {
       setSubmitting(false);
     }

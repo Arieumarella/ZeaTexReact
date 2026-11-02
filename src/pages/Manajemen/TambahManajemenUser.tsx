@@ -4,8 +4,9 @@ import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { createUser } from '../../service/userService';
 import { getAllToko, Toko } from '../../service/tokoService';
-import { ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export default function TambahManajemenUser() {
   const [nama, setNama] = useState("");
@@ -27,11 +28,17 @@ export default function TambahManajemenUser() {
     userJabatan.includes("pemilik");
 
   useEffect(() => {
-    getAllToko().then((res) => {
-      if (res.status && res.data) {
-        setStores(res.data);
-      }
-    });
+    getAllToko()
+      .then((res) => {
+        if (res.status && res.data) {
+          setStores(res.data);
+        } else {
+          toast.error(res.message || 'Gagal memuat daftar toko.');
+        }
+      })
+      .catch((err) => {
+        toast.error(getErrorMessage(err, 'Gagal memuat daftar toko.'));
+      });
   }, []);
 
   return (

@@ -1,5 +1,10 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import {
+  getApiErrorMessage,
+  getErrorMessage,
+  isInvalidTokenMessage,
+} from '../utils/errorMessage';
 
 export interface User {
   id: number;
@@ -39,26 +44,31 @@ export interface UpdateUserPayload {
   role?: string;
 }
 
+function redirectIfInvalidToken(message: string): void {
+  if (isInvalidTokenMessage(message)) {
+    window.location.replace('/');
+  }
+}
+
 export async function deleteUser(id: number): Promise<{ status: boolean; message?: string }> {
   try {
     const response = await fetch(`${API_BASE}/users/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    const data = await response.json();
-    if (!response.ok || !data.status) {
-      toast.error(data.message || 'Gagal menghapus user.');
-      if (data.message === 'Invalid token') {
-        window.location.replace('/');
-      }
-      return { status: false, message: data.message || 'Gagal menghapus user.' };
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal menghapus user.');
+      toast.error(message);
+      redirectIfInvalidToken(message);
+      return { status: false, message };
     }
     toast.success('User berhasil dihapus!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    window.location.replace('/');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    const message = getErrorMessage(error, 'Gagal menghapus user.');
+    toast.error(message);
+    return { status: false, message };
   }
 }
 
@@ -69,20 +79,19 @@ export async function createUser(payload: UpdateUserPayload): Promise<{ status: 
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
-    const data = await response.json();
-    if (!response.ok || !data.status) {
-      toast.error(data.message || 'Gagal menambah user.');
-      if (data.message === 'Invalid token') {
-        window.location.replace('/');
-      }
-      return { status: false, message: data.message || 'Gagal menambah user.' };
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal menambah user.');
+      toast.error(message);
+      redirectIfInvalidToken(message);
+      return { status: false, message };
     }
     toast.success('User berhasil ditambahkan!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    window.location.replace('/');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    const message = getErrorMessage(error, 'Gagal menambah user.');
+    toast.error(message);
+    return { status: false, message };
   }
 }
 
@@ -93,20 +102,19 @@ export async function updateUser(id: number, payload: UpdateUserPayload): Promis
       headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
-    const data = await response.json();
-    if (!response.ok || !data.status) {
-      toast.error(data.message || 'Gagal update user.');
-      if (data.message === 'Invalid token') {
-        window.location.replace('/');
-      }
-      return { status: false, message: data.message || 'Gagal update user.' };
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal update user.');
+      toast.error(message);
+      redirectIfInvalidToken(message);
+      return { status: false, message };
     }
     toast.success('User berhasil diupdate!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    window.location.replace('/');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    const message = getErrorMessage(error, 'Gagal update user.');
+    toast.error(message);
+    return { status: false, message };
   }
 }
 
@@ -116,25 +124,17 @@ export async function getUserDetail(id: number): Promise<UserDetailResponse | nu
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      toast.error('Gagal mengambil data user detail.');
-      window.location.replace('/');
-      return null;
-    }
-    const data = await response.json();
-    if (data && data.status === false && data.message === 'Invalid token') {
-      toast.error('Token tidak valid, silakan login ulang.');
-      window.location.replace('/');
-      return null;
-    }
-    if (!data.status) {
-      toast.error(data.message || 'Gagal mengambil data user detail.');
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal mengambil detail user.');
+      toast.error(message);
+      redirectIfInvalidToken(message);
       return null;
     }
     return data;
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    window.location.replace('/');
+    const message = getErrorMessage(error, 'Gagal mengambil detail user.');
+    toast.error(message);
     return null;
   }
 }
@@ -145,20 +145,17 @@ export async function getUsers(page: number = 1): Promise<UserListResponse | nul
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      window.location.replace('/');
-      return null;
-    }
-    const data = await response.json();
-    if (data && data.status === false && data.message === 'Invalid token') {
-      window.location.replace('/');
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.status) {
+      const message = getApiErrorMessage(data, 'Gagal mengambil data user.');
+      toast.error(message);
+      redirectIfInvalidToken(message);
       return null;
     }
     return data;
   } catch (error) {
-    window.location.replace('/');
+    const message = getErrorMessage(error, 'Gagal mengambil data user.');
+    toast.error(message);
     return null;
   }
 }
-
-

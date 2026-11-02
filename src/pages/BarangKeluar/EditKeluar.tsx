@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { getAllCustomers, Customer, getAllBarang, Barang, getTransaksiKeluarById, updateTransaksiKeluar } from '../../service/barangKeluarService';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export default function EditKeluar() {
   const { id } = useParams();
@@ -100,6 +101,9 @@ export default function EditKeluar() {
         }
       } catch (err) {
         console.error(err);
+        if (mounted) {
+          toast.error(getErrorMessage(err, 'Gagal memuat data transaksi. Silakan coba lagi.'));
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -164,7 +168,6 @@ export default function EditKeluar() {
       const result = await updateTransaksiKeluar(parseInt(id!), payload, nota, hapusNota);
 
       if (!result || !result.status) {
-        toast.error(result?.message || 'Gagal memperbarui data.');
         return;
       }
 
@@ -175,7 +178,7 @@ export default function EditKeluar() {
       }, 1500);
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan jaringan.');
+      toast.error(getErrorMessage(err, 'Gagal memperbarui data barang keluar.'));
     } finally {
       setSaving(false);
     }

@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { getAllCustomers, Customer, getAllBarang, Barang, createTransaksiKeluar } from '../../service/barangKeluarService';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 export default function TambahKeluar() {
   const [tanggal, setTanggal] = useState("");
@@ -84,13 +85,8 @@ export default function TambahKeluar() {
       console.log('POST payload:', JSON.stringify(payload, null, 2));
       const data = await createTransaksiKeluar(payload, nota);
       if (!data || !data.status) {
-        if (data && data.message === 'Invalid token') window.location.replace('/');
-        toast.error(data?.message || 'Gagal menyimpan data.');
         return;
       }
-
-      // Success notification
-      toast.success('Data barang keluar berhasil disimpan!');
 
       // Clear form
       setBarangList([{ namaBarang: "", kodeBarang: "", jumlahYard: "", jumlahRol: "", hargaSatuan: "" }]);
@@ -110,7 +106,7 @@ export default function TambahKeluar() {
 
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan jaringan.');
+      toast.error(getErrorMessage(err, 'Gagal menyimpan data barang keluar.'));
     } finally {
       setLoading(false);
     }

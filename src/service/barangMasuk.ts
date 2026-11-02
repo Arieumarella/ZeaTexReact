@@ -1,5 +1,6 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export interface Supplier {
   id: number;
@@ -24,7 +25,7 @@ export async function getAllSuppliers(): Promise<Supplier[] | null> {
     return data.data || [];
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat mengambil supplier.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk mengambil supplier.'));
     return null;
   }
 }
@@ -53,7 +54,7 @@ export async function getAllBarang(): Promise<Barang[] | null> {
     return data.data || [];
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat mengambil barang.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk mengambil barang.'));
     return null;
   }
 }
@@ -113,7 +114,7 @@ export async function createTransaksiMasuk(payload: any, notaFile: File | null =
     return data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat menyimpan transaksi.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk menyimpan transaksi.'));
     return null;
   }
 }
@@ -196,7 +197,7 @@ export async function getTransaksiMasuk(params: GetTransaksiParams = {}): Promis
     return data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat mengambil transaksi masuk.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk mengambil transaksi masuk.'));
     return null;
   }
 }
@@ -216,7 +217,7 @@ export async function getTransaksiMasukById(id: number): Promise<TransaksiItem |
     return data.data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat mengambil transaksi masuk.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk mengambil transaksi masuk.'));
     return null;
   }
 }
@@ -259,7 +260,7 @@ export async function updateTransaksiMasuk(
     return data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat memperbarui transaksi masuk.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk memperbarui transaksi masuk.'));
     return null;
   }
 }
@@ -296,7 +297,7 @@ export async function updateBerjangkaMasuk(
     }
   } catch (err) {
     console.error('Catch error:', err);
-    toast.error('Terjadi kesalahan jaringan saat memperbarui cicilan.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk memperbarui cicilan.'));
     return null;
   }
 }
@@ -310,12 +311,12 @@ export async function deleteTransaksiMasuk(id: number): Promise<{ status: boolea
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      throw new Error('Response bukan JSON. Periksa endpoint atau authentication.');
+      throw new Error('Server mengembalikan respons yang tidak valid. Silakan coba lagi.');
     }
 
     const text = await response.text();
     if (!text) {
-      throw new Error('Response kosong dari server');
+      throw new Error('Server tidak mengembalikan respons. Silakan coba lagi.');
     }
 
     const data = JSON.parse(text);
@@ -329,8 +330,7 @@ export async function deleteTransaksiMasuk(id: number): Promise<{ status: boolea
     return data;
   } catch (error) {
     console.error('Delete error:', error);
-    const errorMsg = error instanceof Error ? error.message : 'Terjadi kesalahan';
-    toast.error(errorMsg);
+    toast.error(getErrorMessage(error, 'Gagal menghapus transaksi.'));
     return null;
   }
 }
@@ -368,7 +368,7 @@ export async function createRetur(transaksiId: number, payload: CreateReturPaylo
     return data;
   } catch (err) {
     console.error(err);
-    toast.error('Terjadi kesalahan jaringan saat menyimpan retur.');
+    toast.error(getErrorMessage(err, 'Terjadi kesalahan saat menghubungi server untuk menyimpan retur.'));
     return null;
   }
 }

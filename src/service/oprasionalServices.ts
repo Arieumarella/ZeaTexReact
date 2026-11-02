@@ -1,5 +1,6 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export interface Oprasional {
   id: number;
@@ -49,8 +50,8 @@ export async function getOprasional(
     }
     return { status: true, data: data.data, totalPages: data.totalPages };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -70,7 +71,7 @@ export async function getDetailOprasional(id: number): Promise<Oprasional | null
     }
     return data.oprasional;
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
     return null;
   }
 }
@@ -93,8 +94,8 @@ export async function createOprasional({ nama_baya, jml_biaya, tanggal }: { nama
     toast.success('Data oprasional berhasil ditambahkan!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -116,8 +117,8 @@ export async function editOprasional(id: number, data: { nama_baya: string; jml_
     toast.success('Berhasil mengedit biaya operasional');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -138,8 +139,8 @@ export async function deleteOprasional(id: number): Promise<{ status: boolean; m
     toast.success('Biaya oprasional berhasil dihapus!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 

@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import * as XLSX from "xlsx";
 import { getOprasional, deleteOprasional, Oprasional } from '../../service/oprasionalServices';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import { getErrorMessage } from '../../utils/errorMessage';
 import 'react-toastify/dist/ReactToastify.css';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
@@ -115,6 +116,7 @@ export default function BiayaOprasional() {
       }
     } catch (err) {
       console.error("Gagal export excel:", err);
+      toast.error(getErrorMessage(err, "Gagal mengekspor data biaya operasional."));
     }
   };
 

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getUserDetail, updateUser } from '../../service/userService';
 import { getAllToko, Toko } from '../../service/tokoService';
-import { ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getErrorMessage } from '../../utils/errorMessage';
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
@@ -28,11 +29,17 @@ export default function EditManajemenUser() {
     userJabatan.includes("pemilik");
 
   useEffect(() => {
-    getAllToko().then((res) => {
-      if (res.status && res.data) {
-        setStores(res.data);
-      }
-    });
+    getAllToko()
+      .then((res) => {
+        if (res.status && res.data) {
+          setStores(res.data);
+        } else {
+          toast.error(res.message || 'Gagal memuat daftar toko.');
+        }
+      })
+      .catch((err) => {
+        toast.error(getErrorMessage(err, 'Gagal memuat daftar toko.'));
+      });
 
     if (!id) return;
     setLoading(true);

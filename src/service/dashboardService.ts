@@ -1,5 +1,10 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import {
+  getApiErrorMessage,
+  getErrorMessage,
+  isInvalidTokenMessage,
+} from '../utils/errorMessage';
 
 interface SaldoData {
   id: number;
@@ -80,8 +85,9 @@ export const getSaldoPerusahaan = async (): Promise<SaldoData | null> => {
     const result: ApiResponse<SaldoData> = await response.json();
 
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data saldo perusahaan.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data saldo perusahaan.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
@@ -89,7 +95,7 @@ export const getSaldoPerusahaan = async (): Promise<SaldoData | null> => {
 
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data saldo perusahaan."));
     console.error("Error fetching saldo perusahaan:", error);
     return null;
   }
@@ -106,8 +112,9 @@ export const getTransaksiPenjualan = async (): Promise<TransaksiPenjualanData | 
     const result: ApiResponse<TransaksiPenjualanData> = await response.json();
 
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data transaksi penjualan.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data transaksi penjualan.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
@@ -115,7 +122,7 @@ export const getTransaksiPenjualan = async (): Promise<TransaksiPenjualanData | 
 
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data transaksi penjualan."));
     console.error("Error fetching transaksi penjualan:", error);
     return null;
   }
@@ -132,8 +139,9 @@ export const getTransaksiPembelian = async (): Promise<TransaksiPembelianData | 
     const result: ApiResponse<TransaksiPembelianData> = await response.json();
 
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data transaksi pembelian.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data transaksi pembelian.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
@@ -141,7 +149,7 @@ export const getTransaksiPembelian = async (): Promise<TransaksiPembelianData | 
 
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data transaksi pembelian."));
     console.error("Error fetching transaksi pembelian:", error);
     return null;
   }
@@ -156,15 +164,16 @@ export const getTotalStokBarang = async (): Promise<TotalStokBarangData | null> 
     });
     const result: ApiResponse<TotalStokBarangData> = await response.json();
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data total stok barang.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data total stok barang.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
     }
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data total stok barang."));
     console.error("Error fetching total stok barang:", error);
     return null;
   }
@@ -180,15 +189,16 @@ export const getTopSellingItems = async (dari: string, sampai: string): Promise<
     });
     const result: ApiResponse<TopSellingItem[]> = await response.json();
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data barang paling laku.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data barang paling laku.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
     }
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data barang paling laku."));
     console.error("Error fetching top selling items:", error);
     return null;
   }
@@ -203,15 +213,16 @@ export const getChartPenjualan = async (filter: string): Promise<ChartDataItem[]
     });
     const result: ApiResponse<ChartDataItem[]> = await response.json();
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data chart penjualan.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data chart penjualan.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
     }
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data chart penjualan."));
     console.error("Error fetching chart penjualan:", error);
     return null;
   }
@@ -224,14 +235,18 @@ export const getJatuhTempoPiutang = async (): Promise<JatuhTempoResponse | null>
       method: "GET",
       headers: getAuthHeaders(),
     });
-    const result: JatuhTempoResponse = await response.json();
-    if (!response.ok || !result.status) {
-      toast.error("Gagal mengambil data jatuh tempo piutang.");
+    const result: JatuhTempoResponse = await response.json().catch(() => null);
+    if (!response.ok || !result?.status) {
+      const message = getApiErrorMessage(result, "Gagal mengambil data jatuh tempo piutang.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
+        window.location.replace("/");
+      }
       return null;
     }
     return result;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data jatuh tempo piutang."));
     return null;
   }
 };
@@ -246,15 +261,16 @@ export const getDataPelanggan = async (dari: string, sampai: string): Promise<To
     });
     const result: ApiResponse<TopCustomerData[]> = await response.json();
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data pelanggan.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data pelanggan.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
     }
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data pelanggan."));
     console.error("Error fetching data pelanggan:", error);
     return null;
   }
@@ -270,15 +286,16 @@ export const getDataOprasional = async (dari: string, sampai: string): Promise<O
     });
     const result: ApiResponse<OperationalCostData[]> = await response.json();
     if (!response.ok || !result.status) {
-      toast.error(result.data?.toString() || "Gagal mengambil data biaya operasional.");
-      if (result.data?.toString() === "Invalid token") {
+      const message = getApiErrorMessage(result, "Gagal mengambil data biaya operasional.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) {
         window.location.replace("/");
       }
       return null;
     }
     return result.data;
   } catch (error) {
-    toast.error("Terjadi kesalahan jaringan.");
+    toast.error(getErrorMessage(error, "Gagal mengambil data biaya operasional."));
     console.error("Error fetching biaya operasional:", error);
     return null;
   }

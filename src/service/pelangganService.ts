@@ -1,5 +1,6 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export interface Pelanggan {
 	id: number;
@@ -50,8 +51,8 @@ export async function deletePelanggan(id: number): Promise<{ status: boolean; me
 		toast.success('Pelanggan berhasil dihapus!');
 		return { status: true };
 	} catch (error) {
-		toast.error('Terjadi kesalahan jaringan.');
-		return { status: false, message: 'Terjadi kesalahan jaringan.' };
+		toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+		return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
 	}
 }
 
@@ -80,7 +81,7 @@ export async function getDetailPelanggan(id: number): Promise<PelangganDetailRes
 		}
 		return data;
 	} catch (error) {
-		toast.error('Terjadi kesalahan jaringan.');
+		toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
 		return null;
 	}
 }
@@ -103,8 +104,8 @@ export async function updatePelanggan(id: number, payload: { nama: string; no_tl
 		toast.success('Pelanggan berhasil diupdate!');
 		return { status: true };
 	} catch (error) {
-		toast.error('Terjadi kesalahan jaringan.');
-		return { status: false, message: 'Terjadi kesalahan jaringan.' };
+		toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+		return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
 	}
 }
 
@@ -126,8 +127,8 @@ export async function createPelanggan(payload: CreatePelangganPayload): Promise<
 		toast.success('Pelanggan berhasil ditambahkan!');
 		return { status: true };
 	} catch (error) {
-		toast.error('Terjadi kesalahan jaringan.');
-		return { status: false, message: 'Terjadi kesalahan jaringan.' };
+		toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+		return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
 	}
 }
 
@@ -161,7 +162,7 @@ export async function getPelanggan(page: number = 1, search: string = ""): Promi
 		};
 		return mapped;
 	} catch (error) {
-		toast.error('Terjadi kesalahan jaringan.');
+		toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
 		return null;
 	}
 }

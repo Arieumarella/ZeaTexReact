@@ -1,5 +1,6 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export interface Supplier {
   id: number;
@@ -24,8 +25,8 @@ export async function getDetailSupplier(id: number): Promise<{ status: boolean; 
     }
     return { status: true, data: data.supplier };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -47,8 +48,8 @@ export async function updateSupplier(id: number, { nama, no_tlp }: { nama: strin
     toast.success('Supplier berhasil diedit!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -70,8 +71,8 @@ export async function createSupplier({ nama, no_tlp }: { nama: string; no_tlp: s
     toast.success('Supplier berhasil ditambahkan!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -93,8 +94,8 @@ export async function getSupplier(page: number = 1, search: string = ""): Promis
     }
     return { status: true, data: data.data, totalPages: data.totalPages };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 
@@ -115,8 +116,8 @@ export async function deleteSupplier(id: number): Promise<{ status: boolean; mes
     toast.success('Supplier berhasil dihapus!');
     return { status: true };
   } catch (error) {
-    toast.error('Terjadi kesalahan jaringan.');
-    return { status: false, message: 'Terjadi kesalahan jaringan.' };
+    toast.error(getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.'));
+    return { status: false, message: getErrorMessage(error, 'Terjadi kesalahan saat menghubungi server.') };
   }
 }
 

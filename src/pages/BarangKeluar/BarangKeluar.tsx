@@ -6,9 +6,10 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { useNavigate } from "react-router-dom";
-import { deleteTransaksiKeluar, getTransaksiKeluar, getAllCustomers, getTransaksiKeluarById, sendNotaFile, getStoreProfile, updateTransaksiKeluar } from "../../service/barangKeluarService";
+import { deleteTransaksiKeluar, getTransaksiKeluar, getAllCustomers, getTransaksiKeluarById, sendNotaFile, getStoreProfile, updateTransaksiKeluar, type TransaksiItem } from "../../service/barangKeluarService";
 import { getDetailPelanggan } from "../../service/pelangganService";
 import { downloadSuratJalanPdf } from "../../utils/suratJalanPdf";
+import { getErrorMessage } from "../../utils/errorMessage";
 import {
   Table,
   TableHeader,
@@ -1454,12 +1455,10 @@ export default function BarangKeluar() {
         if (data) {
           setTransactions(data.data || []);
         }
-      } else {
-        toast.error(res?.message || "Gagal mengunggah nota.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Terjadi kesalahan saat mengunggah nota.");
+      toast.error(getErrorMessage(err, "Gagal mengunggah nota."));
     } finally {
       setUploading(false);
     }
@@ -1517,12 +1516,10 @@ export default function BarangKeluar() {
             if (data) {
               setTransactions(data.data || []);
             }
-          } else {
-            toast.error(res?.message || "Gagal menghapus nota.");
           }
         } catch (err) {
           console.error(err);
-          toast.error("Terjadi kesalahan saat menghapus nota.");
+          toast.error(getErrorMessage(err, "Gagal menghapus nota."));
         } finally {
           setUploading(false);
         }
@@ -1730,7 +1727,7 @@ export default function BarangKeluar() {
     );
   };
 
-  const renderSuratJalan = (transaksi: any, pelanggan: any, expedisiValue: string, alamat: string) => {
+  const renderSuratJalan = (transaksi: any, pelanggan: any, expedisiValue: string, alamat: string, tanggalValue?: string) => {
     if (!transaksi) return null;
     const details = transaksi.details || [];
     const toNumber = (val: any) => Number(val || 0);
@@ -1759,7 +1756,7 @@ export default function BarangKeluar() {
             <div className="sj-doc-meta">
               <span>
                 <strong>Tanggal</strong>
-                {formatDateWithMonth(transaksi.tgl_transaksi)}
+                {formatDateWithMonth(tanggalValue || transaksi.tgl_transaksi)}
               </span>
               <span>
                 <strong>Ref</strong>
@@ -1979,42 +1976,89 @@ export default function BarangKeluar() {
       }
     } catch (err) {
       console.error("Gagal export excel:", err);
+      toast.error(getErrorMessage(err, "Gagal mengekspor data barang keluar."));
     }
   };
 
-  // Fungsi export nota transaksi (satu baris = satu nota) berdasarkan pelanggan terpilih
+  // Fungsi export nota transaksi (satu baris = satu nota) berdasarkan filter yang aktif
   const handleExportNotaTransaksi = async () => {
-    if (!customer) {
-      toast.warning("Harus memilih pelanggan terlebih dahulu untuk export nota transaksi.");
+    if (exportingNota) return;
+
+    if (tanggalStart && tanggalEnd && tanggalStart > tanggalEnd) {
+      toast.warning("Tanggal awal tidak boleh lebih besar dari tanggal akhir.");
       return;
     }
 
+    const hasCustomerFilter = Boolean(customer);
+    let customerId: number | undefined;
+    if (hasCustomerFilter) {
+      customerId = Number(customer);
+      if (!Number.isFinite(customerId) || customerId <= 0) {
+        toast.error("Data pelanggan tidak valid.");
+        return;
+      }
+    }
+
+    const params: {
+      all: boolean;
+      customerId?: number;
+      waktuAwal?: string;
+      waktuAkhir?: string;
+      kdBarang?: string;
+    } = { all: true };
+    if (customerId) params.customerId = customerId;
+    if (tanggalStart) params.waktuAwal = tanggalStart;
+    if (tanggalEnd) params.waktuAkhir = tanggalEnd;
+    const kdBarang = searchKdBarang.trim();
+    if (kdBarang) params.kdBarang = kdBarang;
+
+    setExportingNota(true);
     try {
-      const res = await getTransaksiKeluar({
-        all: true,
-        customerId: Number(customer),
-      });
+      const res = await getTransaksiKeluar(params);
+      // Service sudah menampilkan toast untuk kegagalan jaringan / token.
+      if (!res || res.status === false) return;
 
-      if (!res) return;
-
-      if (!res.data || res.data.length === 0) {
-        toast.info("Tidak ada data nota transaksi untuk pelanggan ini.");
+      const data = Array.isArray(res.data) ? [...res.data] : [];
+      if (data.length === 0) {
+        toast.info("Tidak ada data nota transaksi untuk filter ini.");
         return;
       }
 
-      const customerName =
-        selectedCustomerName ||
-        customers.find(c => String(c.id) === customer)?.nama ||
-        "pelanggan";
-      const safeCustomerName = customerName.replace(/[\\/:*?"<>|]/g, "-");
+      const getNama = (item: TransaksiItem): string =>
+        String(item?.pelanggan?.nama ?? "").trim();
+      const getTime = (value: string | null | undefined): number => {
+        const date = value ? new Date(value) : null;
+        return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+      };
 
-      const rows = res.data.map((item, idx) => ({
-        No: idx + 1,
-        "Id Transaksi": item.id,
-        "Tanggal Transaksi": formatDateWithMonth(item.tgl_transaksi),
-        "Nama Pelanggan": item.pelanggan?.nama || customerName,
-        "Total Harga": Number(item.total_transaksi) || 0,
-      }));
+      data.sort((a, b) => {
+        const namaA = getNama(a);
+        const namaB = getNama(b);
+        if (namaA && !namaB) return -1;
+        if (!namaA && namaB) return 1;
+        const byName = namaA.localeCompare(namaB, "id", {
+          sensitivity: "base",
+        });
+        if (byName !== 0) return byName;
+        const byDate = getTime(a?.tgl_transaksi) - getTime(b?.tgl_transaksi);
+        if (byDate !== 0) return byDate;
+        return (Number(a?.id) || 0) - (Number(b?.id) || 0);
+      });
+
+      const rows = data.map((item, idx) => {
+        const tgl = item?.tgl_transaksi;
+        const tanggalValid =
+          tgl && !Number.isNaN(new Date(tgl).getTime())
+            ? formatDateWithMonth(tgl)
+            : "-";
+        return {
+          No: idx + 1,
+          "Id Transaksi": item?.id ?? "-",
+          "Tanggal Transaksi": tanggalValid,
+          "Nama Pelanggan": getNama(item) || "-",
+          "Total Harga": Number(item?.total_transaksi) || 0,
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(rows);
       ws['!cols'] = [
@@ -2034,19 +2078,30 @@ export default function BarangKeluar() {
         }
       }
 
+      const customerName = hasCustomerFilter
+        ? selectedCustomerName ||
+          customers.find(c => String(c.id) === customer)?.nama ||
+          "pelanggan"
+        : "semua-pelanggan";
+      const safeCustomerName =
+        customerName.trim().replace(/[\\/:*?"<>|]/g, "-") || "pelanggan";
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Nota Transaksi");
       XLSX.writeFile(wb, `nota-transaksi-${safeCustomerName}.xlsx`);
-      toast.success("Data nota transaksi berhasil diexport ke Excel!");
+      toast.success(`Berhasil mengekspor ${rows.length} nota transaksi.`);
     } catch (err) {
       console.error("Gagal export nota transaksi:", err);
-      toast.error("Terjadi kesalahan saat mengekspor nota transaksi.");
+      toast.error(getErrorMessage(err, "Gagal mengekspor nota transaksi."));
+    } finally {
+      setExportingNota(false);
     }
   };
 
   // State transaksi dari server
   const [transactions, setTransactions] = useState<any[]>([]);
   const [totalPagesState, setTotalPagesState] = useState(1);
+  const [exportingNota, setExportingNota] = useState(false);
 
   // State untuk modal cetak nota
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -2059,6 +2114,7 @@ export default function BarangKeluar() {
   const [loadingSJData, setLoadingSJData] = useState(false);
   const [downloadingSJ, setDownloadingSJ] = useState(false);
   const [expedisi, setExpedisi] = useState('');
+  const [tanggalSuratJalan, setTanggalSuratJalan] = useState('');
   const [alamatSource, setAlamatSource] = useState<'db' | 'manual'>('db');
   const [manualAlamat, setManualAlamat] = useState('');
 
@@ -2072,12 +2128,10 @@ export default function BarangKeluar() {
       const data = await getTransaksiKeluarById(transaksiId);
       if (data) {
         setSelectedTransaksiForPrint(data);
-      } else {
-        toast.error('Gagal memuat data transaksi');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan saat memuat data');
+      toast.error(getErrorMessage(err, 'Terjadi kesalahan saat memuat data'));
     } finally {
       setLoadingPrintData(false);
     }
@@ -2093,11 +2147,11 @@ export default function BarangKeluar() {
     setExpedisi('');
     setAlamatSource('db');
     setManualAlamat('');
+    setTanggalSuratJalan(new Date().toISOString().slice(0, 10));
 
     try {
       const data = await getTransaksiKeluarById(transaksiId);
       if (!data) {
-        toast.error('Gagal memuat data transaksi');
         return;
       }
 
@@ -2120,7 +2174,7 @@ export default function BarangKeluar() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Terjadi kesalahan saat memuat data surat jalan');
+      toast.error(getErrorMessage(err, 'Terjadi kesalahan saat memuat data surat jalan'));
     } finally {
       setLoadingSJData(false);
     }
@@ -2134,6 +2188,7 @@ export default function BarangKeluar() {
   const handleDownloadSuratJalan = async () => {
     if (!selectedTransaksiForSJ) return toast.error('Data transaksi belum tersedia');
     if (!expedisi.trim()) return toast.warning('Ekspedisi wajib diisi sebelum mengunduh surat jalan.');
+    if (!tanggalSuratJalan) return toast.warning('Tanggal surat jalan wajib diisi sebelum mengunduh surat jalan.');
 
     setDownloadingSJ(true);
     try {
@@ -2147,6 +2202,7 @@ export default function BarangKeluar() {
         store: storeProfile,
         expedisi,
         alamat,
+        tanggal: tanggalSuratJalan,
       });
       toast.success('Surat jalan berhasil diunduh.');
     } catch (err) {
@@ -2360,6 +2416,7 @@ export default function BarangKeluar() {
         if (mounted) setStoreProfile(profile);
       } catch (error) {
         console.warn('Gagal mengambil info toko', error);
+        toast.warning(getErrorMessage(error, 'Gagal memuat informasi toko. Beberapa data dokumen mungkin tidak lengkap.'));
       }
     }
     fetchProfile();
@@ -2392,10 +2449,11 @@ export default function BarangKeluar() {
             </button>
             <button
               type="button"
-              className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition font-medium"
+              className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleExportNotaTransaksi}
+              disabled={exportingNota}
             >
-              Export Nota Transaksi
+              {exportingNota ? 'Mengekspor...' : 'Export Nota Transaksi'}
             </button>
           </div>
           <div className="mb-4 flex items-center gap-2">
@@ -2880,7 +2938,7 @@ export default function BarangKeluar() {
             <div className="modal-header flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Unduh Surat Jalan</h2>
-                <p className="text-sm text-gray-500">Isi ekspedisi dan pilih sumber alamat penerima, lalu unduh sebagai PDF.</p>
+                <p className="text-sm text-gray-500">Isi tanggal dan ekspedisi, lalu pilih sumber alamat penerima, kemudian unduh sebagai PDF.</p>
               </div>
               <button onClick={closeSuratJalanModal} disabled={loadingSJData || downloadingSJ} className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50">&times;</button>
             </div>
@@ -2897,6 +2955,20 @@ export default function BarangKeluar() {
             {!loadingSJData && selectedTransaksiForSJ && (
               <>
                 <div className="p-6 border-b border-gray-200 bg-slate-50 space-y-5">
+                  <div>
+                    <label htmlFor="sj-tanggal" className="block text-sm font-semibold text-gray-800 mb-1">
+                      Tanggal Surat Jalan <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="sj-tanggal"
+                      type="date"
+                      value={tanggalSuratJalan}
+                      onChange={(e) => setTanggalSuratJalan(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Wajib diisi. Tanggal ini akan tampil di dokumen surat jalan.</p>
+                  </div>
+
                   <div>
                     <label htmlFor="sj-expedisi" className="block text-sm font-semibold text-gray-800 mb-1">
                       Ekspedisi <span className="text-red-500">*</span>
@@ -2959,7 +3031,8 @@ export default function BarangKeluar() {
                       selectedTransaksiForSJ,
                       selectedPelangganForSJ,
                       expedisi,
-                      alamatSource === 'manual' ? manualAlamat : String(selectedPelangganForSJ?.alamat || '')
+                      alamatSource === 'manual' ? manualAlamat : String(selectedPelangganForSJ?.alamat || ''),
+                      tanggalSuratJalan
                     )}
                   </div>
                 </div>

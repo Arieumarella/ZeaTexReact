@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ComponentCard from "../../components/common/ComponentCard";
 import Label from "../../components/form/Label";
 import { getProfile, updateProfile, ProfileData } from '../../service/profileService';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 
 const ProfilePage: React.FC = () => {
 	const [loading, setLoading] = useState(false);
@@ -40,8 +40,6 @@ const ProfilePage: React.FC = () => {
 		const res = await updateProfile(payload);
 		if (res && res.status) {
 			setProfile(res.data || profile);
-		} else if (res && !res.status) {
-			toast.error(res.message || 'Gagal memperbarui profile');
 		}
 		setSaving(false);
 	};

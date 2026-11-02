@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { getAllToko, Toko } from "../../service/tokoService";
+import { getErrorMessage } from "../../utils/errorMessage";
 
 const StoreSwitcher: React.FC = () => {
   const [stores, setStores] = useState<Toko[]>([]);
@@ -30,7 +32,11 @@ const StoreSwitcher: React.FC = () => {
         if (res.status && res.data) {
           setStores(res.data);
           localStorage.setItem("auth_stores", JSON.stringify(res.data));
+        } else {
+          toast.error(res.message || "Gagal memuat daftar toko.");
         }
+      }).catch((error) => {
+        toast.error(getErrorMessage(error, "Gagal memuat daftar toko."));
       });
     }
   }, [isSuperAdminOrOwner]);

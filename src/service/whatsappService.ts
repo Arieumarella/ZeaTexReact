@@ -1,4 +1,6 @@
 // src/service/whatsappService.ts
+import { getErrorMessage } from '../utils/errorMessage';
+
 const WA_API_BASE = import.meta.env.VITE_WHATSAPP_API_URL || 'http://localhost:5000';
 
 export interface WhatsAppStatus {
@@ -9,32 +11,43 @@ export interface WhatsAppQR {
     qr: string;
 }
 
-export async function getWhatsAppStatus(): Promise<WhatsAppStatus> {
-    const response = await fetch(`${WA_API_BASE}/status`);
-    const data = await response.json();
+interface WhatsAppResponse {
+    ready?: unknown;
+    qr?: unknown;
+    message?: string;
+}
 
-    if (!response.ok) {
-        throw new Error(data?.message || 'Gagal mengambil status WhatsApp');
+async function requestJson(path: string, fallbackMessage: string): Promise<WhatsAppResponse> {
+    try {
+        const response = await fetch(`${WA_API_BASE}${path}`);
+        const data: WhatsAppResponse | null = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            throw new Error(data?.message || fallbackMessage);
+        }
+
+        return data ?? {};
+    } catch (error) {
+        throw new Error(getErrorMessage(error, fallbackMessage));
     }
+}
+
+export async function getWhatsAppStatus(): Promise<WhatsAppStatus> {
+    const data = await requestJson('/status', 'Gagal mengambil status WhatsApp.');
 
     if (typeof data?.ready !== 'boolean') {
-        throw new Error(data?.message || 'Response status tidak valid');
+        throw new Error(data?.message || 'Respons status WhatsApp tidak valid.');
     }
 
-    return data;
+    return { ready: data.ready };
 }
 
 export async function getWhatsAppQR(): Promise<WhatsAppQR> {
-    const response = await fetch(`${WA_API_BASE}/qr`);
-    const data = await response.json();
+    const data = await requestJson('/qr', 'Gagal mengambil QR dari server WhatsApp.');
 
-    if (!response.ok) {
-        throw new Error(data?.message || 'Gagal mengambil QR dari server');
+    if (typeof data?.qr !== 'string' || !data.qr.trim()) {
+        throw new Error(data?.message || 'QR WhatsApp tidak tersedia.');
     }
 
-    if (typeof data?.qr !== 'string') {
-        throw new Error(data?.message || 'QR tidak tersedia');
-    }
-
-    return data;
+    return { qr: data.qr };
 }

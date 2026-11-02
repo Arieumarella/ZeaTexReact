@@ -104,10 +104,6 @@ export default function InputCicilan() {
       }, 1400);
     } else {
       console.error('Update failed or returned null');
-      toast.error('Gagal menyimpan cicilan', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
     }
   };
 

@@ -1,5 +1,10 @@
 import { API_BASE, getAuthHeaders } from './apiHelper';
 import { toast } from 'react-toastify';
+import {
+  getApiErrorMessage,
+  getErrorMessage,
+  isInvalidTokenMessage,
+} from '../utils/errorMessage';
 
 export interface LogItem {
   id: number;
@@ -27,6 +32,14 @@ export async function getLogs(
   search: string = "",
   limit: number = 15
 ): Promise<LogResponse> {
+  const fallback: LogResponse = {
+    status: false,
+    data: [],
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  };
+
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -38,17 +51,17 @@ export async function getLogs(
     const res = await fetch(`${API_BASE}/log?${params.toString()}`, {
       headers: getAuthHeaders(),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.status) {
+      const message = getApiErrorMessage(data, "Gagal mengambil data log aktivitas.");
+      toast.error(message);
+      if (isInvalidTokenMessage(message)) window.location.replace("/");
+      return { ...fallback, message };
+    }
     return data;
-  } catch (error: any) {
-    toast.error("Gagal terhubung ke server untuk mengambil log");
-    return {
-      status: false,
-      data: [],
-      page: 1,
-      total: 0,
-      totalPages: 1,
-      message: error.message,
-    };
+  } catch (error) {
+    const message = getErrorMessage(error, "Gagal mengambil data log aktivitas.");
+    toast.error(message);
+    return { ...fallback, message };
   }
 }
