@@ -17,6 +17,17 @@ import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import SuperAdminRoute from "./components/auth/SuperAdminRoute";
+import EmployeeRoute from "./components/auth/EmployeeRoute";
+{/* HR Management */}
+import HrStoreLocations from "./pages/HRManagement/HrStoreLocations";
+import HrEmployees from "./pages/HRManagement/HrEmployees";
+import HrApprovals from "./pages/HRManagement/HrApprovals";
+import HrAttendances from "./pages/HRManagement/HrAttendances";
+import HrPayrolls from "./pages/HRManagement/HrPayrolls";
+import HrPayrollDetail from "./pages/HRManagement/HrPayrollDetail";
+{/* Attendance App (PWA) */}
+import AttendanceApp from "./pages/AttendanceApp/AttendanceApp";
 
 
 import Home from "./pages/Dashboard/Home";
@@ -134,6 +145,14 @@ export default function App() {
             {/* Log Aktivitas */}
             <Route path="/log-aktivitas" element={<LogAktivitas />} />
 
+            {/* HR Management (Super Admin only) */}
+            <Route path="/hr-management/store-locations" element={<SuperAdminRoute><HrStoreLocations /></SuperAdminRoute>} />
+            <Route path="/hr-management/employees" element={<SuperAdminRoute><HrEmployees /></SuperAdminRoute>} />
+            <Route path="/hr-management/approvals" element={<SuperAdminRoute><HrApprovals /></SuperAdminRoute>} />
+            <Route path="/hr-management/attendances" element={<SuperAdminRoute><HrAttendances /></SuperAdminRoute>} />
+            <Route path="/hr-management/payrolls" element={<SuperAdminRoute><HrPayrolls /></SuperAdminRoute>} />
+            <Route path="/hr-management/payrolls/:id" element={<SuperAdminRoute><HrPayrollDetail /></SuperAdminRoute>} />
+
 
 
             {/* Others Page */}
@@ -164,6 +183,9 @@ export default function App() {
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+
+          {/* Attendance App (PWA for employees) */}
+          <Route path="/attendance-app" element={<EmployeeRoute><AttendanceApp /></EmployeeRoute>} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

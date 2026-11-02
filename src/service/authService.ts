@@ -28,6 +28,18 @@ export async function login(username: string, password: string): Promise<{ statu
         localStorage.removeItem("auth_stores");
       }
 
+      if (data.employee_profile) {
+        localStorage.setItem("auth_employee_profile", JSON.stringify(data.employee_profile));
+      } else {
+        localStorage.removeItem("auth_employee_profile");
+      }
+
+      if (data.hr_store) {
+        localStorage.setItem("auth_hr_store", JSON.stringify(data.hr_store));
+      } else {
+        localStorage.removeItem("auth_hr_store");
+      }
+
       return { status: true, token: data.token, role: data.role, id_toko: tokoId };
     } else {
       return { status: false, message: data.message || 'Login gagal. Periksa username dan password Anda.' };

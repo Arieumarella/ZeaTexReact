@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
@@ -9,7 +9,7 @@ import {
   ListIcon
 } from "../icons";
 import { FontAwesomeIcon } from "../icons";
-import { faArrowTrendDown, faBoxesStacked, faArrowTrendUp, faMoneyCheckDollar, faAddressCard, faGears } from '@fortawesome/free-solid-svg-icons';
+import { faArrowTrendDown, faBoxesStacked, faArrowTrendUp, faMoneyCheckDollar, faAddressCard, faGears, faUsers, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import { useSidebar } from "../context/SidebarContext";
 
 
@@ -21,56 +21,83 @@ type NavItem = {
   subItems?: { name: string; path: string; relatedPaths?: string[]; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/Home",
-  },
-  {
-    icon: <FontAwesomeIcon icon={faBoxesStacked} />,
-    name: "Stok Barang",
-    path: "/stok-barang",
-    relatedPaths: ["/tambah-stok", "/edit-stok"],
-  },
-  {
-    icon: <FontAwesomeIcon icon={faArrowTrendDown} />,
-    name: "Barang Masuk",
-    path: "/barang-masuk",
-    relatedPaths: ["/tambah-masuk", "/edit-masuk", "/detail-masuk", "/input-cicilan", "/retur-masuk"],
-  },
+function buildNavItems(): NavItem[] {
+  const role = localStorage.getItem("auth_role") || "";
+  const hasEmployeeProfile = Boolean(localStorage.getItem("auth_employee_profile"));
+
+  const items: NavItem[] = [
+    {
+      icon: <GridIcon />,
+      name: "Dashboard",
+      path: "/Home",
+    },
+    {
+      icon: <FontAwesomeIcon icon={faBoxesStacked} />,
+      name: "Stok Barang",
+      path: "/stok-barang",
+      relatedPaths: ["/tambah-stok", "/edit-stok"],
+    },
+    {
+      icon: <FontAwesomeIcon icon={faArrowTrendDown} />,
+      name: "Barang Masuk",
+      path: "/barang-masuk",
+      relatedPaths: ["/tambah-masuk", "/edit-masuk", "/detail-masuk", "/input-cicilan", "/retur-masuk"],
+    },
 
 
-  {
-    icon: <FontAwesomeIcon icon={faArrowTrendUp} />,
-    name: "Barang Keluar",
-    path: "/barang-keluar",
-    relatedPaths: ["/tambah-keluar", "/edit-keluar", "/detail-keluar", "/input-cicilan-keluar", "/retur-keluar"],
-  },
+    {
+      icon: <FontAwesomeIcon icon={faArrowTrendUp} />,
+      name: "Barang Keluar",
+      path: "/barang-keluar",
+      relatedPaths: ["/tambah-keluar", "/edit-keluar", "/detail-keluar", "/input-cicilan-keluar", "/retur-keluar"],
+    },
 
-  {
-    icon: <FontAwesomeIcon icon={faMoneyCheckDollar} />,
-    name: "Biaya Operasional",
-    path: "/biaya-operasional",
-    relatedPaths: ["/tambah-biaya", "/edit-biaya"],
-  },
+    {
+      icon: <FontAwesomeIcon icon={faMoneyCheckDollar} />,
+      name: "Biaya Operasional",
+      path: "/biaya-operasional",
+      relatedPaths: ["/tambah-biaya", "/edit-biaya"],
+    },
 
-  {
-    icon: <FontAwesomeIcon icon={faAddressCard} />,
-    name: "Profile Toko",
-    path: "/profile",
-    relatedPaths: ["/profile"],
-  },
+    {
+      icon: <FontAwesomeIcon icon={faAddressCard} />,
+      name: "Profile Toko",
+      path: "/profile",
+      relatedPaths: ["/profile"],
+    },
 
-  {
-    icon: <FontAwesomeIcon icon={faGears} />,
-    name: "Konfigurasi WhatsApp",
-    path: "/konfigurasi-whatsapp",
-    relatedPaths: ["/konfigurasi-whatsapp"],
-  },
+    {
+      icon: <FontAwesomeIcon icon={faGears} />,
+      name: "Konfigurasi WhatsApp",
+      path: "/konfigurasi-whatsapp",
+      relatedPaths: ["/konfigurasi-whatsapp"],
+    },
+  ];
 
+  if (role === "SUPER_ADMIN") {
+    items.push({
+      name: "HR Management",
+      icon: <FontAwesomeIcon icon={faUsers} />,
+      subItems: [
+        { name: "Lokasi & Jam Kerja Toko", path: "/hr-management/store-locations", relatedPaths: ["/hr-management/store-locations"], pro: false },
+        { name: "Master Karyawan & Gaji", path: "/hr-management/employees", relatedPaths: ["/hr-management/employees"], pro: false },
+        { name: "Pusat Approval", path: "/hr-management/approvals", relatedPaths: ["/hr-management/approvals"], pro: false },
+        { name: "Monitoring Absensi", path: "/hr-management/attendances", relatedPaths: ["/hr-management/attendances"], pro: false },
+        { name: "Payroll", path: "/hr-management/payrolls", relatedPaths: ["/hr-management/payrolls"], pro: false },
+      ],
+    });
+  }
 
-  {
+  if (role !== "SUPER_ADMIN" && hasEmployeeProfile) {
+    items.push({
+      icon: <FontAwesomeIcon icon={faFingerprint} />,
+      name: "Absensi Saya",
+      path: "/attendance-app",
+      relatedPaths: ["/attendance-app"],
+    });
+  }
+
+  items.push({
     name: "Assets Management",
     icon: <ListIcon />,
     subItems: [
@@ -81,12 +108,10 @@ const navItems: NavItem[] = [
       { name: "Manajemen List barang", path: "/manajemen-list-barang", relatedPaths: ["/tambah-manajemen-list-barang", "/edit-manajemen-list-barang"], pro: false },
       { name: "Log Aktivitas", path: "/log-aktivitas", relatedPaths: ["/log-aktivitas"], pro: false },
     ],
-  },
+  });
 
-
-
-
-];
+  return items;
+}
 
 const othersItems: NavItem[] = [
 
@@ -95,6 +120,7 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const navItems = useMemo(() => buildNavItems(), []);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -147,7 +173,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive]);
+  }, [location, isActive, navItems]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
