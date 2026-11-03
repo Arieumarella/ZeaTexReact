@@ -24,7 +24,7 @@ export function isNetworkError(error: unknown): boolean {
 export function isInvalidTokenMessage(message: unknown): boolean {
   return (
     typeof message === "string" &&
-    /invalid token|no token provided|token tidak valid|token expired|jwt expired|unauthorized|sesi anda telah berakhir/i.test(
+    /invalid token|no token provided|token tidak valid|token expired|jwt expired|unauthorized|sesi anda telah berakhir|dipakai login di perangkat lain/i.test(
       message,
     )
   );
