@@ -34,6 +34,53 @@ export interface UserBrief {
   no_tlp?: string | null;
 }
 
+export interface AvailableUser extends UserBrief {
+  id_toko?: number | null;
+  nama_toko?: string | null;
+}
+
+export interface HrShift {
+  id: number;
+  store_id: number;
+  name: string;
+  work_start_time: string;
+  work_end_time: string;
+  grace_period_minutes: number;
+  is_active: boolean;
+}
+
+export interface SalaryHistoryRow {
+  id: number;
+  user_id: number;
+  store_id: number;
+  effective_date: string;
+  position?: string | null;
+  base_salary: number;
+  notes?: string | null;
+  created_by?: number | null;
+}
+
+export interface HrDashboardData {
+  today: string;
+  active_employees: number;
+  total_employees: number;
+  present_today: number;
+  late_today: number;
+  on_leave_today: number;
+  alpha_today: number;
+  pending: {
+    leave: number;
+    overtime: number;
+    correction: number;
+    loan: number;
+    total: number;
+  };
+  payrolls: {
+    draft: number;
+    final: number;
+  };
+}
+
 export interface EmployeeProfile {
   id: number;
   user_id: number;
@@ -48,12 +95,17 @@ export interface EmployeeProfile {
   bank_account: string | null;
   bank_name: string | null;
   annual_leave_quota: number;
+  annual_leave_entitlement: number;
+  leave_quota_year?: number;
   join_date: string | null;
+  resign_date?: string | null;
+  shift_id?: number | null;
   allow_any_store_checkin: boolean;
   is_active: boolean;
   user?: UserBrief | null;
   nama_toko?: string;
   toko?: { id: number; nama_toko?: string | null } | null;
+  shift?: HrShift | null;
 }
 
 export type AttendanceStatus =
@@ -87,6 +139,23 @@ export interface Attendance {
   status: AttendanceStatus;
   late_minutes: number;
   notes?: string | null;
+  user?: UserBrief | null;
+  nama_toko?: string;
+}
+
+export interface AttendanceRecapRow {
+  user_id: number;
+  store_id: number;
+  total_days: number;
+  present: number;
+  late: number;
+  sick: number;
+  annual_leave: number;
+  unpaid_leave: number;
+  field_duty: number;
+  alpha: number;
+  late_minutes: number;
+  missing_checkout: number;
   user?: UserBrief | null;
   nama_toko?: string;
 }
@@ -262,6 +331,13 @@ export interface MyHrStore {
   grace_period_minutes: number;
   work_days: string;
   location_configured: boolean;
+  shift?: {
+    id: number;
+    name: string;
+    work_start_time: string;
+    work_end_time: string;
+    grace_period_minutes: number;
+  } | null;
 }
 
 export interface MyToday {

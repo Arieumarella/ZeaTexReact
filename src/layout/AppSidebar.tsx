@@ -79,6 +79,7 @@ function buildNavItems(): NavItem[] {
       name: "HR Management",
       icon: <FontAwesomeIcon icon={faUsers} />,
       subItems: [
+        { name: "Dashboard HR", path: "/hr-management", relatedPaths: ["/hr-management"], pro: false },
         { name: "Lokasi & Jam Kerja Toko", path: "/hr-management/store-locations", relatedPaths: ["/hr-management/store-locations"], pro: false },
         { name: "Master Karyawan & Gaji", path: "/hr-management/employees", relatedPaths: ["/hr-management/employees"], pro: false },
         { name: "Pusat Approval", path: "/hr-management/approvals", relatedPaths: ["/hr-management/approvals"], pro: false },

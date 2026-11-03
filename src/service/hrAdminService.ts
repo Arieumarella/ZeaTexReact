@@ -3,10 +3,14 @@ import { getApiErrorMessage, getErrorMessage } from '../utils/errorMessage';
 import type {
   ApprovalSummary,
   Attendance,
+  AttendanceRecapRow,
+  AvailableUser,
   CorrectionRequest,
   EmployeeLoan,
   EmployeeProfile,
   Holiday,
+  HrDashboardData,
+  HrShift,
   HrStoreConfig,
   LeaveRequest,
   OvertimeRequest,
@@ -14,6 +18,7 @@ import type {
   PayrollDetail,
   Payslip,
   RequestStatus,
+  SalaryHistoryRow,
 } from '../types/hr';
 
 type BasicResponse = { status: boolean; message?: string };
@@ -110,6 +115,98 @@ export async function deleteHoliday(id: number): Promise<BasicResponse> {
   }
 }
 
+// ===================== Shifts =====================
+
+export async function listShifts(
+  storeId?: number,
+): Promise<{ status: boolean; data?: HrShift[]; message?: string }> {
+  try {
+    const query = storeId ? `?store_id=${storeId}` : '';
+    const response = await fetch(`${API_BASE}/api/hr/shifts${query}`, { headers: getAuthHeaders() });
+    const data = await parseResponse<{ status: boolean; data?: HrShift[]; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal mengambil data shift.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal mengambil data shift.') };
+  }
+}
+
+export async function createShift(payload: {
+  store_id: number;
+  name: string;
+  work_start_time: string;
+  work_end_time: string;
+  grace_period_minutes: number;
+}): Promise<{ status: boolean; data?: HrShift; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/shifts`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await parseResponse<{ status: boolean; data?: HrShift; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal menambah shift.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal menambah shift.') };
+  }
+}
+
+export async function updateShift(
+  id: number,
+  payload: Partial<HrShift>,
+): Promise<{ status: boolean; data?: HrShift; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/shifts/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await parseResponse<{ status: boolean; data?: HrShift; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal memperbarui shift.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal memperbarui shift.') };
+  }
+}
+
+export async function deleteShift(id: number): Promise<BasicResponse> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/shifts/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await parseResponse<BasicResponse>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal menghapus shift.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal menghapus shift.') };
+  }
+}
+
+// ===================== Dashboard =====================
+
+export async function getHrDashboard(): Promise<{ status: boolean; data?: HrDashboardData; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/dashboard`, { headers: getAuthHeaders() });
+    const data = await parseResponse<{ status: boolean; data?: HrDashboardData; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal mengambil ringkasan HR.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal mengambil ringkasan HR.') };
+  }
+}
+
 // ===================== Employees =====================
 
 export interface EmployeeListParams {
@@ -174,6 +271,77 @@ export async function updateEmployee(
   }
 }
 
+export async function getSalaryHistory(
+  userId: number,
+): Promise<{ status: boolean; data?: SalaryHistoryRow[]; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/employees/${userId}/salary-history`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await parseResponse<{ status: boolean; data?: SalaryHistoryRow[]; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal mengambil riwayat gaji.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal mengambil riwayat gaji.') };
+  }
+}
+
+export interface AvailableUserParams {
+  page?: number;
+  take?: number;
+  search?: string;
+  store_id?: number;
+}
+
+export async function listAvailableUsers(
+  params: AvailableUserParams = {},
+): Promise<{ status: boolean; data?: AvailableUser[]; total?: number; totalPages?: number; page?: number; message?: string }> {
+  try {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.take) query.set('take', String(params.take));
+    if (params.search) query.set('search', params.search);
+    if (params.store_id !== undefined) query.set('store_id', String(params.store_id));
+    const response = await fetch(`${API_BASE}/api/hr/available-users?${query.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await parseResponse<{
+      status: boolean;
+      data?: AvailableUser[];
+      total?: number;
+      totalPages?: number;
+      page?: number;
+      message?: string;
+    }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal mengambil daftar user.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal mengambil daftar user.') };
+  }
+}
+
+export async function deleteEmployee(
+  userId: number,
+): Promise<{ status: boolean; deactivated?: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/api/hr/employees/${userId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await parseResponse<{ status: boolean; deactivated?: boolean; message?: string }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal menghapus pegawai.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal menghapus pegawai.') };
+  }
+}
+
 // ===================== Attendances =====================
 
 export interface AttendanceListParams {
@@ -206,6 +374,41 @@ export async function listAttendances(
     return data;
   } catch (error) {
     return { status: false, message: getErrorMessage(error, 'Gagal mengambil data absensi.') };
+  }
+}
+
+export interface AttendanceRecapParams {
+  start_date?: string;
+  end_date?: string;
+  store_id?: number;
+  search?: string;
+}
+
+export async function getAttendanceRecap(
+  params: AttendanceRecapParams = {},
+): Promise<{ status: boolean; data?: AttendanceRecapRow[]; start_date?: string | null; end_date?: string | null; message?: string }> {
+  try {
+    const query = new URLSearchParams();
+    if (params.start_date) query.set('start_date', params.start_date);
+    if (params.end_date) query.set('end_date', params.end_date);
+    if (params.store_id !== undefined) query.set('store_id', String(params.store_id));
+    if (params.search) query.set('search', params.search);
+    const response = await fetch(`${API_BASE}/api/hr/attendances/recap?${query.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await parseResponse<{
+      status: boolean;
+      data?: AttendanceRecapRow[];
+      start_date?: string | null;
+      end_date?: string | null;
+      message?: string;
+    }>(response);
+    if (!response.ok || !data?.status) {
+      return { status: false, message: getApiErrorMessage(data, 'Gagal mengambil rekap absensi.') };
+    }
+    return data;
+  } catch (error) {
+    return { status: false, message: getErrorMessage(error, 'Gagal mengambil rekap absensi.') };
   }
 }
 

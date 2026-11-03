@@ -7,7 +7,7 @@ import StatusBadge from '../../components/hr/StatusBadge';
 import { deletePayroll, finalizePayroll, getPayroll, updatePayslip } from '../../service/hrAdminService';
 import type { PayrollDetail, Payslip } from '../../types/hr';
 import { formatDate, formatRupiah } from '../../utils/hrFormat';
-import { downloadPayslipPdf, exportPayrollExcel } from '../../utils/payslipPdf';
+import { downloadPayslipPdf, exportBankTransferCsv, exportPayrollExcel } from '../../utils/payslipPdf';
 
 export default function HrPayrollDetail() {
   const { id } = useParams<{ id: string }>();
@@ -128,6 +128,12 @@ export default function HrPayrollDetail() {
           className="px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700"
         >
           Export Excel
+        </button>
+        <button
+          onClick={() => exportBankTransferCsv(payroll)}
+          className="px-4 py-2.5 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700"
+        >
+          Export Transfer Bank
         </button>
         {payroll.status === 'DRAFT' && (
           <>

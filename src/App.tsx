@@ -21,6 +21,7 @@ import SuperAdminRoute from "./components/auth/SuperAdminRoute";
 import EmployeeRoute from "./components/auth/EmployeeRoute";
 {/* HR Management */}
 import HrStoreLocations from "./pages/HRManagement/HrStoreLocations";
+import HrDashboard from "./pages/HRManagement/HrDashboard";
 import HrEmployees from "./pages/HRManagement/HrEmployees";
 import HrApprovals from "./pages/HRManagement/HrApprovals";
 import HrAttendances from "./pages/HRManagement/HrAttendances";
@@ -146,6 +147,7 @@ export default function App() {
             <Route path="/log-aktivitas" element={<LogAktivitas />} />
 
             {/* HR Management (Super Admin only) */}
+            <Route path="/hr-management" element={<SuperAdminRoute><HrDashboard /></SuperAdminRoute>} />
             <Route path="/hr-management/store-locations" element={<SuperAdminRoute><HrStoreLocations /></SuperAdminRoute>} />
             <Route path="/hr-management/employees" element={<SuperAdminRoute><HrEmployees /></SuperAdminRoute>} />
             <Route path="/hr-management/approvals" element={<SuperAdminRoute><HrApprovals /></SuperAdminRoute>} />

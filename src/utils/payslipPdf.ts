@@ -65,6 +65,35 @@ export function downloadPayslipPdf(payslip: Payslip, payrollLabel: string) {
   doc.save(`slip-gaji-${safeName}-${payrollLabel.replace(/[^\w\d-]+/g, '-')}.pdf`);
 }
 
+export function exportBankTransferCsv(payroll: PayrollDetail) {
+  const escape = (value: string | number | null | undefined) => {
+    const text = String(value ?? '').replace(/"/g, '""');
+    return `"${text}"`;
+  };
+
+  const header = ['No', 'Nama Pegawai', 'Bank', 'No Rekening', 'Nominal Transfer', 'Cabang', 'Keterangan'];
+  const rows = payroll.payslips.map((payslip, index) => [
+    index + 1,
+    payslip.employee_name_snapshot || '-',
+    payslip.bank_name_snapshot || '-',
+    payslip.bank_account_snapshot || '-',
+    payslip.net_salary,
+    payslip.store_name_snapshot || '-',
+    payroll.period_name,
+  ]);
+
+  const csv = '\uFEFF' + [header, ...rows].map((row) => row.map(escape).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `transfer-bank-${payroll.period_name.replace(/[^\w\d-]+/g, '-')}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function exportPayrollExcel(payroll: PayrollDetail) {
   const rows = payroll.payslips.map((payslip) => ({
     'Nama': payslip.employee_name_snapshot || '-',

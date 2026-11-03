@@ -3,8 +3,8 @@ import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import HrPageHeader from '../../components/hr/HrPageHeader';
 import StoreMapPicker from '../../components/hr/StoreMapPicker';
-import { getStoreConfigs, updateStoreConfig, listHolidays, createHoliday, deleteHoliday } from '../../service/hrAdminService';
-import type { Holiday, HrStoreConfig } from '../../types/hr';
+import { getStoreConfigs, updateStoreConfig, listHolidays, createHoliday, deleteHoliday, listShifts, createShift, updateShift, deleteShift } from '../../service/hrAdminService';
+import type { Holiday, HrShift, HrStoreConfig } from '../../types/hr';
 import { formatDate } from '../../utils/hrFormat';
 
 const WORK_DAYS = [
@@ -37,6 +37,15 @@ export default function HrStoreLocations() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [holidayName, setHolidayName] = useState('');
   const [holidayDate, setHolidayDate] = useState('');
+  const [shifts, setShifts] = useState<HrShift[]>([]);
+  const [shiftForm, setShiftForm] = useState({
+    name: '',
+    work_start_time: '08:00',
+    work_end_time: '17:00',
+    grace_period_minutes: 15,
+  });
+  const [editingShift, setEditingShift] = useState<HrShift | null>(null);
+  const [shiftSaving, setShiftSaving] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     latitude: null,
@@ -58,10 +67,14 @@ export default function HrStoreLocations() {
   useEffect(() => {
     if (selectedStoreId === null) {
       setHolidays([]);
+      setShifts([]);
       return;
     }
     listHolidays(selectedStoreId).then((res) => {
       if (res.status && res.data) setHolidays(res.data);
+    });
+    listShifts(selectedStoreId).then((res) => {
+      if (res.status && res.data) setShifts(res.data);
     });
   }, [selectedStoreId]);
 
@@ -164,6 +177,86 @@ export default function HrStoreLocations() {
       setHolidays((prev) => prev.filter((item) => item.id !== holiday.id));
     } else {
       toast.error(res.message || 'Gagal menghapus hari libur.');
+    }
+  }
+
+  async function reloadShifts() {
+    if (selectedStoreId === null) return;
+    const res = await listShifts(selectedStoreId);
+    if (res.status && res.data) setShifts(res.data);
+  }
+
+  async function handleSaveShift() {
+    if (selectedStoreId === null) return;
+    if (!shiftForm.name.trim()) {
+      toast.error('Nama shift wajib diisi.');
+      return;
+    }
+    if (shiftForm.work_end_time <= shiftForm.work_start_time) {
+      toast.error('Jam pulang shift harus setelah jam masuk.');
+      return;
+    }
+    setShiftSaving(true);
+    let res;
+    if (editingShift) {
+      res = await updateShift(editingShift.id, {
+        name: shiftForm.name.trim(),
+        work_start_time: shiftForm.work_start_time,
+        work_end_time: shiftForm.work_end_time,
+        grace_period_minutes: shiftForm.grace_period_minutes,
+      });
+    } else {
+      res = await createShift({
+        store_id: selectedStoreId,
+        name: shiftForm.name.trim(),
+        work_start_time: shiftForm.work_start_time,
+        work_end_time: shiftForm.work_end_time,
+        grace_period_minutes: shiftForm.grace_period_minutes,
+      });
+    }
+    setShiftSaving(false);
+    if (res.status) {
+      toast.success(editingShift ? 'Shift berhasil diperbarui.' : 'Shift berhasil ditambahkan.');
+      setEditingShift(null);
+      setShiftForm({ name: '', work_start_time: '08:00', work_end_time: '17:00', grace_period_minutes: 15 });
+      reloadShifts();
+    } else {
+      toast.error(res.message || 'Gagal menyimpan shift.');
+    }
+  }
+
+  function startEditShift(shift: HrShift) {
+    setEditingShift(shift);
+    setShiftForm({
+      name: shift.name,
+      work_start_time: shift.work_start_time,
+      work_end_time: shift.work_end_time,
+      grace_period_minutes: shift.grace_period_minutes,
+    });
+  }
+
+  function cancelEditShift() {
+    setEditingShift(null);
+    setShiftForm({ name: '', work_start_time: '08:00', work_end_time: '17:00', grace_period_minutes: 15 });
+  }
+
+  async function handleDeleteShift(shift: HrShift) {
+    const confirm = await Swal.fire({
+      title: 'Hapus shift?',
+      text: `Shift "${shift.name}" (${shift.work_start_time}-${shift.work_end_time}) akan dihapus.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus',
+      cancelButtonText: 'Batal',
+    });
+    if (!confirm.isConfirmed) return;
+    const res = await deleteShift(shift.id);
+    if (res.status) {
+      toast.success('Shift berhasil dihapus.');
+      if (editingShift?.id === shift.id) cancelEditShift();
+      reloadShifts();
+    } else {
+      toast.error(res.message || 'Gagal menghapus shift.');
     }
   }
 
@@ -368,6 +461,102 @@ export default function HrStoreLocations() {
                     >
                       Hapus
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Shift Kerja</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Shift menggantikan jam masuk/pulang baku toko untuk pegawai yang ditugaskan ke shift
+              tersebut. Pegawai tanpa shift memakai jam kerja toko.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+              <input
+                type="text"
+                placeholder="Nama shift (mis. Shift Pagi)"
+                value={shiftForm.name}
+                onChange={(event) => setShiftForm({ ...shiftForm, name: event.target.value })}
+                className="col-span-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white"
+              />
+              <input
+                type="time"
+                value={shiftForm.work_start_time}
+                onChange={(event) => setShiftForm({ ...shiftForm, work_start_time: event.target.value })}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white"
+              />
+              <input
+                type="time"
+                value={shiftForm.work_end_time}
+                onChange={(event) => setShiftForm({ ...shiftForm, work_end_time: event.target.value })}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={240}
+                  placeholder="Toleransi (mnt)"
+                  value={shiftForm.grace_period_minutes}
+                  onChange={(event) =>
+                    setShiftForm({ ...shiftForm, grace_period_minutes: parseInt(event.target.value || '0', 10) })
+                  }
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                />
+                {editingShift && (
+                  <button
+                    onClick={cancelEditShift}
+                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm"
+                  >
+                    Batal
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={handleSaveShift}
+                disabled={shiftSaving}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm"
+              >
+                {shiftSaving ? 'Menyimpan...' : editingShift ? 'Simpan Perubahan Shift' : '+ Tambah Shift'}
+              </button>
+            </div>
+
+            {shifts.length === 0 ? (
+              <p className="text-sm text-gray-500">Belum ada shift untuk toko ini.</p>
+            ) : (
+              <div className="space-y-2">
+                {shifts.map((shift) => (
+                  <div
+                    key={shift.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{shift.name}</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {shift.work_start_time}-{shift.work_end_time} · toleransi {shift.grace_period_minutes} mnt
+                        {shift.is_active ? '' : ' · nonaktif'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEditShift(shift)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteShift(shift)}
+                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 import HrPageHeader from '../../components/hr/HrPageHeader';
 import Modal from '../../components/hr/Modal';
 import Pagination from '../../components/hr/Pagination';
 import StatusBadge from '../../components/hr/StatusBadge';
-import { listAttendances, updateAttendance } from '../../service/hrAdminService';
+import { getAttendanceRecap, listAttendances, updateAttendance } from '../../service/hrAdminService';
 import { getAllToko, Toko } from '../../service/tokoService';
-import type { Attendance } from '../../types/hr';
+import type { Attendance, AttendanceRecapRow } from '../../types/hr';
 import { formatDateTime, formatTime } from '../../utils/hrFormat';
 
 const STATUS_OPTIONS = [
@@ -34,6 +35,9 @@ export default function HrAttendances() {
   const [editing, setEditing] = useState<Attendance | null>(null);
   const [form, setForm] = useState({ check_in_time: '', check_out_time: '', status: '', late_minutes: '0', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState<'detail' | 'recap'>('detail');
+  const [recapRows, setRecapRows] = useState<AttendanceRecapRow[]>([]);
+  const [recapLoading, setRecapLoading] = useState(false);
 
   useEffect(() => {
     getAllToko().then((res) => {
@@ -64,6 +68,50 @@ export default function HrAttendances() {
       toast.error(res.message || 'Gagal memuat data absensi.');
     }
     setLoading(false);
+  }
+
+  async function loadRecap() {
+    setRecapLoading(true);
+    const res = await getAttendanceRecap({
+      store_id: storeFilter ? parseInt(storeFilter, 10) : undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+      search: search || undefined,
+    });
+    if (res.status && res.data) {
+      setRecapRows(res.data);
+    } else {
+      setRecapRows([]);
+      toast.error(res.message || 'Gagal memuat rekap absensi.');
+    }
+    setRecapLoading(false);
+  }
+
+  function exportRecapExcel() {
+    if (recapRows.length === 0) {
+      toast.error('Tidak ada data rekap untuk diekspor.');
+      return;
+    }
+    const rows = recapRows.map((row) => ({
+      Pegawai: row.user?.nama || row.user?.username || `User #${row.user_id}`,
+      Jabatan: row.user?.jabatan || '-',
+      Toko: row.nama_toko || '-',
+      'Total Hari': row.total_days,
+      Hadir: row.present,
+      Terlambat: row.late,
+      Sakit: row.sick,
+      'Cuti Tahunan': row.annual_leave,
+      'Cuti Tanpa Gaji': row.unpaid_leave,
+      'Dinas Luar': row.field_duty,
+      Alpha: row.alpha,
+      'Menit Telat': row.late_minutes,
+      'Lupa Absen Pulang': row.missing_checkout,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Absensi');
+    const label = `${startDate || 'awal'}_${endDate || 'akhir'}`;
+    XLSX.writeFile(workbook, `rekap-absensi-${label}.xlsx`);
   }
 
   function toLocalInput(dateValue: string | null | undefined): string {
@@ -117,6 +165,31 @@ export default function HrAttendances() {
       />
 
       <div className="flex flex-wrap gap-3 mb-4">
+        <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+          <button
+            onClick={() => setView('detail')}
+            className={`px-4 py-2 text-sm font-semibold ${
+              view === 'detail'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Detail
+          </button>
+          <button
+            onClick={() => {
+              setView('recap');
+              loadRecap();
+            }}
+            className={`px-4 py-2 text-sm font-semibold ${
+              view === 'recap'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Rekap
+          </button>
+        </div>
         <select
           value={storeFilter}
           onChange={(event) => setStoreFilter(event.target.value)}
@@ -142,18 +215,20 @@ export default function HrAttendances() {
           onChange={(event) => setEndDate(event.target.value)}
           className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
         />
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        >
-          <option value="">Semua Status</option>
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        {view === 'detail' && (
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+          >
+            <option value="">Semua Status</option>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
         <input
           type="text"
           placeholder="Cari pegawai..."
@@ -163,15 +238,29 @@ export default function HrAttendances() {
         />
         <button
           onClick={() => {
-            setPage(1);
-            load();
+            if (view === 'recap') {
+              loadRecap();
+            } else {
+              setPage(1);
+              load();
+            }
           }}
           className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm"
         >
-          Filter
+          {view === 'recap' ? 'Tampilkan Rekap' : 'Filter'}
         </button>
+        {view === 'recap' && (
+          <button
+            onClick={exportRecapExcel}
+            className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-sm"
+          >
+            Export Excel
+          </button>
+        )}
       </div>
 
+      {view === 'detail' ? (
+        <>
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -256,6 +345,64 @@ export default function HrAttendances() {
       </div>
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      ) : (
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Pegawai</th>
+                  <th className="px-4 py-3 text-left font-semibold">Toko</th>
+                  <th className="px-4 py-3 text-center font-semibold">Hadir</th>
+                  <th className="px-4 py-3 text-center font-semibold">Telat</th>
+                  <th className="px-4 py-3 text-center font-semibold">Sakit</th>
+                  <th className="px-4 py-3 text-center font-semibold">Cuti</th>
+                  <th className="px-4 py-3 text-center font-semibold">Alpha</th>
+                  <th className="px-4 py-3 text-center font-semibold">Menit Telat</th>
+                  <th className="px-4 py-3 text-center font-semibold">Lupa Pulang</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {recapLoading ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                      Memuat rekap...
+                    </td>
+                  </tr>
+                ) : recapRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                      Tidak ada data rekap pada filter ini.
+                    </td>
+                  </tr>
+                ) : (
+                  recapRows.map((row) => (
+                    <tr key={row.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {row.user?.nama || row.user?.username || `User #${row.user_id}`}
+                        </div>
+                        <div className="text-xs text-gray-500">{row.user?.jabatan || '-'}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{row.nama_toko || '-'}</td>
+                      <td className="px-4 py-3 text-center text-gray-900 dark:text-white">{row.present}</td>
+                      <td className="px-4 py-3 text-center text-amber-600">{row.late}</td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{row.sick}</td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                        {row.annual_leave + row.unpaid_leave + row.field_duty}
+                      </td>
+                      <td className="px-4 py-3 text-center text-red-600">{row.alpha}</td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{row.late_minutes}</td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{row.missing_checkout}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal open={photoUrl !== null} title="Foto Absensi" onClose={() => setPhotoUrl(null)}>
         {photoUrl && <img src={photoUrl} alt="Foto absensi" className="rounded-xl max-h-[60vh] mx-auto" />}
