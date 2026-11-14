@@ -6,7 +6,7 @@ import HrPageHeader from '../../components/hr/HrPageHeader';
 import StatusBadge from '../../components/hr/StatusBadge';
 import { deletePayroll, finalizePayroll, getPayroll, updatePayslip } from '../../service/hrAdminService';
 import type { PayrollDetail, Payslip } from '../../types/hr';
-import { formatDate, formatRupiah } from '../../utils/hrFormat';
+import { formatDate, formatRupiah, salaryTypeLabel, salaryTypeUnit } from '../../utils/hrFormat';
 import { downloadPayslipPdf, exportBankTransferCsv, exportPayrollExcel } from '../../utils/payslipPdf';
 
 export default function HrPayrollDetail() {
@@ -188,6 +188,7 @@ export default function HrPayrollDetail() {
                 <th className="px-4 py-3 text-center font-semibold">Hari Kerja</th>
                 <th className="px-4 py-3 text-center font-semibold">Hadir</th>
                 <th className="px-4 py-3 text-center font-semibold">Alpha</th>
+                <th className="px-4 py-3 text-right font-semibold">Gaji Pokok</th>
                 <th className="px-4 py-3 text-right font-semibold">Bruto</th>
                 <th className="px-4 py-3 text-right font-semibold">Bonus</th>
                 <th className="px-4 py-3 text-right font-semibold">Potongan Lain</th>
@@ -206,12 +207,19 @@ export default function HrPayrollDetail() {
                         {slip.employee_name_snapshot || slip.user?.nama || '-'}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {slip.position_snapshot || '-'} · {slip.nama_toko || slip.store_name_snapshot || '-'}
+                        {slip.position_snapshot || '-'} · {slip.nama_toko || slip.store_name_snapshot || '-'} ·{' '}
+                        {salaryTypeLabel(slip.salary_type_snapshot)}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{slip.total_working_days}</td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{slip.total_present_days}</td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{slip.total_absent_days}</td>
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
+                      {formatRupiah(slip.base_pay_amount ?? slip.base_salary)}
+                      <div className="text-xs text-gray-500">
+                        per {salaryTypeUnit(slip.salary_type_snapshot)}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{formatRupiah(slip.gross_salary)}</td>
                     <td className="px-4 py-3 text-right">
                       {isEditing ? (

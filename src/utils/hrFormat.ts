@@ -1,3 +1,29 @@
+import type { SalaryType } from '../types/hr';
+
+export const SALARY_TYPE_LABELS: Record<SalaryType, string> = {
+  MONTHLY: 'Bulanan',
+  WEEKLY: 'Mingguan',
+  DAILY: 'Harian',
+};
+
+export const SALARY_TYPE_UNITS: Record<SalaryType, string> = {
+  MONTHLY: 'bulan',
+  WEEKLY: 'minggu',
+  DAILY: 'hari',
+};
+
+export function normalizeSalaryType(value: string | null | undefined): SalaryType {
+  return value === 'WEEKLY' || value === 'DAILY' ? value : 'MONTHLY';
+}
+
+export function salaryTypeLabel(value: string | null | undefined): string {
+  return SALARY_TYPE_LABELS[normalizeSalaryType(value)];
+}
+
+export function salaryTypeUnit(value: string | null | undefined): string {
+  return SALARY_TYPE_UNITS[normalizeSalaryType(value)];
+}
+
 export function formatRupiah(value: number | null | undefined): string {
   const number = Number(value || 0);
   return new Intl.NumberFormat('id-ID', {

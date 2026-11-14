@@ -175,6 +175,7 @@ export interface TransaksiItem {
     jml_yard: number;
     jml_rol: number;
     harga_satuan: number;
+    harga_beli?: number;
     created_at: string;
     updated_at: string;
     kode_barang?: string;
@@ -198,6 +199,7 @@ export interface GetTransaksiParams {
   waktuAkhir?: string;
   all?: boolean;
   kdBarang?: string;
+  includeHargaBeli?: boolean;
 }
 
 export async function getTransaksiKeluar(params: GetTransaksiParams = {}): Promise<{
@@ -220,6 +222,7 @@ export async function getTransaksiKeluar(params: GetTransaksiParams = {}): Promi
   if (params.waktuAwal) qs.set('waktuAwal', params.waktuAwal);
   if (params.waktuAkhir) qs.set('waktuAkhir', params.waktuAkhir);
   if (params.kdBarang) qs.set('kdBarang', params.kdBarang);
+  if (params.includeHargaBeli) qs.set('includeHargaBeli', 'true');
   const url = `${API_BASE}/transaksi-keluar${qs.toString() ? `?${qs.toString()}` : ''}`;
 
   try {

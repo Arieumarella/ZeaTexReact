@@ -1898,7 +1898,7 @@ export default function BarangKeluar() {
   // Fungsi export Excel
   const handleExportExcel = async () => {
     try {
-      const params: any = { all: true };
+      const params: any = { all: true, includeHargaBeli: true };
       if (customer) params.customerId = Number(customer);
       if (tanggalStart) params.waktuAwal = tanggalStart;
       if (tanggalEnd) params.waktuAkhir = tanggalEnd;
@@ -1941,6 +1941,7 @@ export default function BarangKeluar() {
               "Jumlah Yard": 0,
               "Jumlah Rol": 0,
               "Harga Satuan": 0,
+              "Harga Beli": 0,
               "Total Harga Transaksi": item.total_transaksi,
               "Sisa Pembayaran": sisaPembayaran,
               "Status Pembayaran": statusPembayaranStr,
@@ -1959,6 +1960,7 @@ export default function BarangKeluar() {
                 "Jumlah Yard": d.jml_yard || 0,
                 "Jumlah Rol": d.jml_rol || 0,
                 "Harga Satuan": d.harga_satuan || 0,
+                "Harga Beli": Number(d.harga_beli) || 0,
                 "Total Harga Transaksi": dIdx === 0 ? item.total_transaksi : "",
                 "Sisa Pembayaran": dIdx === 0 ? sisaPembayaran : "",
                 "Status Pembayaran": statusPembayaranStr,

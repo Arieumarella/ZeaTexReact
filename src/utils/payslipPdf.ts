@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import type { PayrollDetail, Payslip } from '../types/hr';
-import { formatRupiah } from './hrFormat';
+import { formatRupiah, salaryTypeLabel } from './hrFormat';
 
 export function downloadPayslipPdf(payslip: Payslip, payrollLabel: string) {
   const doc = new jsPDF();
@@ -18,10 +18,11 @@ export function downloadPayslipPdf(payslip: Payslip, payrollLabel: string) {
   doc.text(`Jabatan: ${payslip.position_snapshot || '-'}`, 14, 47);
   doc.text(`Kode: ${payslip.employee_code_snapshot || '-'}`, 14, 53);
   doc.text(`Cabang: ${payslip.store_name_snapshot || '-'}`, 14, 59);
-  doc.text(`Bank: ${payslip.bank_name_snapshot || '-'} ${payslip.bank_account_snapshot || ''}`, 14, 65);
+  doc.text(`Tipe Gaji: ${salaryTypeLabel(payslip.salary_type_snapshot)}`, 14, 65);
+  doc.text(`Bank: ${payslip.bank_name_snapshot || '-'} ${payslip.bank_account_snapshot || ''}`, 14, 71);
 
   const rows: [string, string][] = [
-    ['Gaji Pokok', formatRupiah(payslip.base_salary)],
+    [`Gaji Pokok (${salaryTypeLabel(payslip.salary_type_snapshot)})`, formatRupiah(payslip.base_pay_amount ?? payslip.base_salary)],
     [`Uang Makan (${payslip.total_present_days} hari)`, formatRupiah(payslip.meal_allowance_amount)],
     [`Uang Transport (${payslip.total_present_days} hari)`, formatRupiah(payslip.transport_allowance_amount)],
     [`Lembur (${payslip.total_overtime_hours} jam)`, formatRupiah(payslip.overtime_pay)],
@@ -35,7 +36,7 @@ export function downloadPayslipPdf(payslip: Payslip, payrollLabel: string) {
   ];
 
   autoTable(doc, {
-    startY: 72,
+    startY: 78,
     head: [['Keterangan', 'Jumlah']],
     body: rows,
     theme: 'grid',
@@ -104,7 +105,8 @@ export function exportPayrollExcel(payroll: PayrollDetail) {
     'Hari Kerja': payslip.total_working_days,
     'Hadir': payslip.total_present_days,
     'Alpha': payslip.total_absent_days,
-    'Gaji Pokok': payslip.base_salary,
+    'Tipe Gaji': salaryTypeLabel(payslip.salary_type_snapshot),
+    'Gaji Pokok': payslip.base_pay_amount ?? payslip.base_salary,
     'Uang Makan': payslip.meal_allowance_amount,
     'Uang Transport': payslip.transport_allowance_amount,
     'Lembur': payslip.overtime_pay,

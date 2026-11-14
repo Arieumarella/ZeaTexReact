@@ -13,8 +13,13 @@ import {
   updateEmployee,
 } from '../../service/hrAdminService';
 import { getAllToko, Toko } from '../../service/tokoService';
-import type { AvailableUser, EmployeeProfile, HrShift, SalaryHistoryRow } from '../../types/hr';
-import { formatRupiah } from '../../utils/hrFormat';
+import type { AvailableUser, EmployeeProfile, HrShift, SalaryHistoryRow, SalaryType } from '../../types/hr';
+import {
+  formatRupiah,
+  normalizeSalaryType,
+  salaryTypeLabel,
+  salaryTypeUnit,
+} from '../../utils/hrFormat';
 
 interface FormState {
   employee_code: string;
@@ -22,6 +27,7 @@ interface FormState {
   position: string;
   store_id: number;
   shift_id: string;
+  salary_type: SalaryType;
   base_salary: string;
   fixed_meal_allowance: string;
   fixed_transport_allowance: string;
@@ -42,6 +48,7 @@ const emptyForm: FormState = {
   position: '',
   store_id: 1,
   shift_id: '',
+  salary_type: 'MONTHLY',
   base_salary: '0',
   fixed_meal_allowance: '0',
   fixed_transport_allowance: '0',
@@ -63,6 +70,7 @@ function buildPayload(form: FormState) {
     position: form.position || null,
     store_id: form.store_id,
     shift_id: form.shift_id ? Number(form.shift_id) : null,
+    salary_type: form.salary_type,
     base_salary: Number(form.base_salary || 0),
     fixed_meal_allowance: Number(form.fixed_meal_allowance || 0),
     fixed_transport_allowance: Number(form.fixed_transport_allowance || 0),
@@ -87,6 +95,14 @@ interface EmployeeFieldsProps {
 }
 
 function EmployeeFields({ form, stores, shifts, inputClass, onChange }: EmployeeFieldsProps) {
+  const unit = salaryTypeUnit(form.salary_type);
+  const salaryHint =
+    form.salary_type === 'DAILY'
+      ? 'Gaji dibayar sesuai hari hadir dan cuti berbayar. Alpha tidak dipotong lagi.'
+      : form.salary_type === 'WEEKLY'
+        ? 'Gaji mingguan dibayar proporsional sesuai hari kerja terbayar. Alpha tidak dipotong lagi.'
+        : 'Gaji bulanan dibayar penuh per periode. Alpha dan cuti tanpa gaji dipotong.';
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
@@ -133,8 +149,23 @@ function EmployeeFields({ form, stores, shifts, inputClass, onChange }: Employee
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gaji Pokok (Rp)</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Penggajian</label>
+        <select
+          className={inputClass}
+          value={form.salary_type}
+          onChange={(event) => onChange({ ...form, salary_type: event.target.value as SalaryType })}
+        >
+          <option value="MONTHLY">Bulanan (gaji per bulan)</option>
+          <option value="WEEKLY">Mingguan (gaji per minggu)</option>
+          <option value="DAILY">Harian (gaji per hari)</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Gaji Pokok / {unit.charAt(0).toUpperCase() + unit.slice(1)} (Rp)
+        </label>
         <input type="number" min={0} className={inputClass} value={form.base_salary} onChange={(event) => onChange({ ...form, base_salary: event.target.value })} />
+        <p className="text-xs text-gray-500 mt-1">{salaryHint}</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Uang Makan / Hari (Rp)</label>
@@ -325,6 +356,7 @@ export default function HrEmployees() {
       position: employee.position || '',
       store_id: employee.store_id,
       shift_id: employee.shift_id ? String(employee.shift_id) : '',
+      salary_type: normalizeSalaryType(employee.salary_type),
       base_salary: String(employee.base_salary),
       fixed_meal_allowance: String(employee.fixed_meal_allowance),
       fixed_transport_allowance: String(employee.fixed_transport_allowance),
@@ -388,7 +420,7 @@ export default function HrEmployees() {
     <div>
       <HrPageHeader
         title="Master Karyawan & Gaji"
-        description="Kelola profil pegawai: gaji, tunjangan, rekening, dan kuota cuti."
+        description="Kelola profil pegawai: tipe penggajian, gaji, tunjangan, rekening, dan kuota cuti."
       />
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -495,6 +527,9 @@ export default function HrEmployees() {
                     </td>
                     <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
                       {formatRupiah(employee.base_salary)}
+                      <div className="text-xs text-gray-500">
+                        per {salaryTypeUnit(employee.salary_type)} · {salaryTypeLabel(employee.salary_type)}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
                       {employee.annual_leave_quota} / {employee.annual_leave_entitlement ?? employee.annual_leave_quota}
@@ -666,6 +701,7 @@ export default function HrEmployees() {
                 <tr>
                   <th className="px-3 py-2 text-left">Tanggal</th>
                   <th className="px-3 py-2 text-left">Jabatan</th>
+                  <th className="px-3 py-2 text-left">Tipe</th>
                   <th className="px-3 py-2 text-right">Gaji Pokok</th>
                   <th className="px-3 py-2 text-left">Catatan</th>
                 </tr>
@@ -677,6 +713,7 @@ export default function HrEmployees() {
                       {row.effective_date ? row.effective_date.slice(0, 10) : '-'}
                     </td>
                     <td className="px-3 py-2 text-gray-900 dark:text-white">{row.position || '-'}</td>
+                    <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{salaryTypeLabel(row.salary_type)}</td>
                     <td className="px-3 py-2 text-right text-gray-900 dark:text-white">{formatRupiah(row.base_salary)}</td>
                     <td className="px-3 py-2 text-gray-500">{row.notes || '-'}</td>
                   </tr>

@@ -1,3 +1,5 @@
+export type SalaryType = 'MONTHLY' | 'WEEKLY' | 'DAILY';
+
 export interface HrStoreConfig {
   id: number;
   store_id: number;
@@ -55,6 +57,7 @@ export interface SalaryHistoryRow {
   store_id: number;
   effective_date: string;
   position?: string | null;
+  salary_type?: SalaryType;
   base_salary: number;
   notes?: string | null;
   created_by?: number | null;
@@ -88,6 +91,7 @@ export interface EmployeeProfile {
   employee_code: string | null;
   nik: string | null;
   position: string | null;
+  salary_type?: SalaryType;
   base_salary: number;
   fixed_meal_allowance: number;
   fixed_transport_allowance: number;
@@ -274,7 +278,9 @@ export interface Payslip {
   bank_name_snapshot?: string | null;
   period_start: string;
   period_end: string;
+  salary_type_snapshot?: SalaryType;
   base_salary: number;
+  base_pay_amount: number | null;
   fixed_meal_allowance: number;
   fixed_transport_allowance: number;
   overtime_rate_per_hour: number;
