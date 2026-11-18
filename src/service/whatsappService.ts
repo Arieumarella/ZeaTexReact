@@ -15,6 +15,7 @@ interface WhatsAppResponse {
     ready?: unknown;
     qr?: unknown;
     message?: string;
+    error?: string;
 }
 
 async function requestJson(path: string, fallbackMessage: string): Promise<WhatsAppResponse> {
@@ -47,6 +48,40 @@ export async function getWhatsAppQR(): Promise<WhatsAppQR> {
 
     if (typeof data?.qr !== 'string' || !data.qr.trim()) {
         throw new Error(data?.message || 'QR WhatsApp tidak tersedia.');
+    }
+
+    return { qr: data.qr };
+}
+
+/**
+ * Paksa buat sesi WhatsApp baru: sesi lama (jika ada) di-logout & dihapus.
+ * Butuh login app (header Authorization Bearer <JWT>).
+ * Endpoint: POST /session/reset -> { status:true, qr: "data:image/png;base64,..." }
+ */
+export async function resetWhatsAppSession(): Promise<WhatsAppQR> {
+    const token = localStorage.getItem('auth_token');
+
+    let response: Response;
+    try {
+        response = await fetch(`${WA_API_BASE}/session/reset`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+    } catch (error) {
+        throw new Error(getErrorMessage(error, 'Gagal menghubungi server WhatsApp.'));
+    }
+
+    const data: WhatsAppResponse | null = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            throw new Error(data?.error || data?.message || 'Sesi login tidak valid. Silakan login kembali.');
+        }
+        throw new Error(data?.error || data?.message || 'Gagal membuat sesi WhatsApp baru.');
+    }
+
+    if (typeof data?.qr !== 'string' || !data.qr.trim()) {
+        throw new Error(data?.error || data?.message || 'QR WhatsApp tidak tersedia.');
     }
 
     return { qr: data.qr };

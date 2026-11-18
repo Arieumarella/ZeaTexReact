@@ -4,7 +4,8 @@ import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getWhatsAppStatus, getWhatsAppQR } from "../../service/whatsappService";
+import Swal from 'sweetalert2';
+import { getWhatsAppStatus, resetWhatsAppSession } from "../../service/whatsappService";
 
 export default function Wa() {
   const [ready, setReady] = useState<boolean | null>(null);
@@ -37,18 +38,34 @@ export default function Wa() {
   }, []);
 
   const handleGenerateQr = async () => {
+    // Jika sedang login, konfirmasi dulu karena sesi lama akan dihapus.
+    if (ready === true) {
+      const result = await Swal.fire({
+        title: 'Buat sesi WhatsApp baru?',
+        text: 'Sesi WhatsApp yang sedang aktif akan di-logout dan dihapus. Anda harus scan QR lagi.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, buat sesi baru',
+        cancelButtonText: 'Batal',
+      });
+      if (!result.isConfirmed) return;
+    }
+
     setLoading(true);
     try {
-      const data = await getWhatsAppQR();
+      const data = await resetWhatsAppSession();
       // server returns { qr: "data:image/png;base64,..." } or just base64
       if (data.qr.startsWith("data:")) {
         setQr(data.qr);
       } else {
         setQr(`data:image/png;base64,${data.qr}`);
       }
+      setReady(false);
     } catch (err) {
-      console.error("Error fetching QR:", err);
-      toast.error(err instanceof Error ? err.message : 'Gagal menghubungi server QR');
+      console.error("Error generating new session:", err);
+      toast.error(err instanceof Error ? err.message : 'Gagal membuat sesi WhatsApp baru');
       setQr(null);
     } finally {
       setLoading(false);
