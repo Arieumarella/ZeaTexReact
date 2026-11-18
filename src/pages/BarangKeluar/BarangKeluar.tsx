@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -29,6 +30,89 @@ const extractStorePhones = (profile: any) => (
     profile?.nomor_telepon3 && { label: 'Admin 3', value: profile.nomor_telepon3 },
   ].filter(Boolean) as { label: string; value: string }[]
 );
+
+// CSS nota (dipakai untuk preview modal, print, dan PDF) — font besar & terbaca
+const notaStyles = `
+  .nota-doc {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --brand-soft: #ecfeff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: #ffffff;
+    width: 100%;
+  }
+  .nota-preview .nota-doc { padding: 4px; }
+  #nota-print-root { display: none; }
+
+  .nota-doc .nota-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 14px; }
+  .nota-doc .nota-pill { display: inline-block; background: var(--brand-soft); color: #0e7490; border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
+  .nota-doc .nota-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; line-height: 1.2; }
+  .nota-doc .nota-muted { color: var(--muted); font-size: 12.5px; margin: 0; }
+  .nota-doc .nota-store { margin-top: 8px; font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 2px; }
+  .nota-doc .nota-store .store-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .nota-doc .nota-store .phones { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+  .nota-doc .nota-store .phones span b { font-weight: 600; }
+
+  .nota-doc .nota-meta { display: grid; grid-template-columns: repeat(2, minmax(130px, auto)); gap: 8px 20px; font-size: 12.5px; text-align: right; }
+  .nota-doc .nota-meta .k { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  .nota-doc .nota-meta .v { font-weight: 700; }
+
+  .nota-doc .nota-info-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 14px; }
+  .nota-doc .nota-info-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #f8fafc; }
+  .nota-doc .nota-info-card .k { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .nota-doc .nota-info-card .v { font-weight: 700; font-size: 14px; }
+
+  .nota-doc .nota-status { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(14,165,233,.08), rgba(14,165,233,.02)); page-break-inside: avoid; }
+  .nota-doc .nota-status .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin: 0 0 6px; }
+  .nota-doc .status-chip { display: inline-block; border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .nota-doc .status-chip.success { background: #dcfce7; color: #166534; }
+  .nota-doc .status-chip.warning { background: #fef9c3; color: #854d0e; }
+  .nota-doc .amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .nota-doc .amounts .amount { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .nota-doc .amounts .amount .k { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  .nota-doc .amounts .amount .v { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .nota-doc .danger { color: #dc2626; }
+
+  .nota-doc .nota-section-title { font-size: 13px; font-weight: 700; margin: 0 0 6px; }
+  .nota-doc .nota-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .nota-doc .nota-table thead th { background: var(--ink); color: #fff; text-align: left; padding: 8px 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
+  .nota-doc .nota-table tbody td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .nota-doc .nota-table tbody tr:nth-child(even) { background: #f8fafc; }
+  .nota-doc .nota-table .center { text-align: center; }
+  .nota-doc .nota-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nota-doc .nota-table td.num, .nota-doc .nota-table td.mono { font-family: 'Roboto Mono', Menlo, Consolas, monospace; }
+  .nota-doc .nota-table tbody tr { page-break-inside: avoid; }
+  .nota-doc .nota-table thead { display: table-header-group; }
+
+  .nota-doc .nota-table-summary { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 8px; font-size: 12.5px; color: #475569; }
+
+  .nota-doc .nota-totals { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: #f8fafc; page-break-inside: avoid; }
+  .nota-doc .nota-totals .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12.5px; }
+  .nota-doc .nota-totals .row .amt { font-variant-numeric: tabular-nums; font-family: 'Roboto Mono', Menlo, Consolas, monospace; }
+  .nota-doc .nota-totals .grand { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; font-size: 15px; font-weight: 800; }
+
+  .nota-doc .nota-notes { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; page-break-inside: avoid; }
+  .nota-doc .nota-notes .k { font-weight: 700; margin-bottom: 2px; }
+  .nota-doc .nota-footer { margin-top: 14px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  .nota-doc .nota-installments { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .nota-doc .nota-installments .row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 12.5px; }
+  .nota-doc .nota-installments .row:last-child { border-bottom: none; }
+  .nota-doc .nota-installments .amt { font-variant-numeric: tabular-nums; }
+
+  /* Isolasi cetak: hanya #nota-print-root yang tercetak, tanpa halaman kosong/dobel */
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    #root { display: none !important; }
+    #nota-print-root { display: block !important; }
+    .nota-doc { width: 100% !important; max-width: none !important; }
+    @page { size: A4; margin: 10mm; }
+  }
+`;
 
 // CSS untuk print
 const printStyles = `
@@ -1727,6 +1811,165 @@ export default function BarangKeluar() {
     );
   };
 
+  const renderNota = (transaksi: any, extraClass = '') => {
+    if (!transaksi) return null;
+    const details = transaksi.details || [];
+    const toNumber = (val: any) => Number(val || 0);
+
+    const grossBeforeRetur = details.reduce((sum: number, d: any) => sum + (toNumber(d.jml_yard) * toNumber(d.harga_satuan)), 0);
+    const totalReturNominal = details.reduce((sum: number, d: any) => sum + (toNumber(d.jml_yard_retur) * toNumber(d.harga_satuan)), 0);
+    const totalReturYard = details.reduce((sum: number, d: any) => sum + toNumber(d.jml_yard_retur), 0);
+    const totalReturRol = details.reduce((sum: number, d: any) => sum + toNumber(d.jml_rol_retur), 0);
+    const totalQtyYard = details.reduce((sum: number, d: any) => sum + toNumber(d.jml_yard), 0);
+    const totalQtyRol = details.reduce((sum: number, d: any) => sum + toNumber(d.jml_rol), 0);
+    const netBarang = Math.max(0, grossBeforeRetur - totalReturNominal);
+    const discountNominal = transaksi.tipe_discount === 'persen'
+      ? (netBarang * toNumber(transaksi.jml_discount)) / 100
+      : toNumber(transaksi.jml_discount);
+    const subtotal = netBarang - discountNominal;
+    const ppnNominal = transaksi.tipe_ppn === 'persen'
+      ? (subtotal * toNumber(transaksi.jml_ppn)) / 100
+      : toNumber(transaksi.jml_ppn);
+    const totalKeseluruhan = subtotal + ppnNominal;
+    const statusBerjangka = transaksi.status_pembayaran === '1';
+    const totalBayar = statusBerjangka ? calculateTotalPayment(transaksi.berjangka || []) : totalKeseluruhan;
+    const sisaBayar = Math.max(0, totalKeseluruhan - totalBayar);
+    const sudahLunas = !statusBerjangka || totalBayar >= totalKeseluruhan;
+    const pelanggan = transaksi.pelanggan || {};
+    const storeInfo = storeProfile;
+    const discountLabel = transaksi.tipe_discount === 'persen' ? `${transaksi.jml_discount || 0}%` : 'Nominal';
+    const ppnLabel = transaksi.tipe_ppn === 'persen' ? `${transaksi.jml_ppn || 0}%` : 'Nominal';
+
+    return (
+      <div className={`nota-doc ${extraClass}`.trim()}>
+        <header className="nota-header">
+          <div className="nota-brand">
+            <span className="nota-pill">Zea Textile</span>
+            <h1 className="nota-title">Nota Pembelian</h1>
+            <p className="nota-muted">Tanggal Transaksi: {formatDateWithMonth(transaksi.tgl_transaksi)}</p>
+            {storeInfo && (
+              <div className="nota-store">
+                {storeInfo.nama_toko && <span className="store-name">{storeInfo.nama_toko}</span>}
+                {storeInfo.alamat && <span>{storeInfo.alamat}</span>}
+                {storePhones.length > 0 && (
+                  <div className="phones">
+                    {storePhones.map((phone: { label: string; value: string }) => (
+                      <span key={phone.label}><b>{phone.label}:</b> {phone.value}</span>
+                    ))}
+                  </div>
+                )}
+                {(storeInfo.rekening || storeInfo.nama_rekening) && (
+                  <span>{[storeInfo.rekening, storeInfo.nama_rekening].filter(Boolean).join(' · ')}</span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="nota-meta">
+            <div><span className="k">No. Nota</span><span className="v">#{transaksi.id}</span></div>
+            <div><span className="k">Kasir</span><span className="v">{transaksi.penginput?.username || '-'}</span></div>
+            <div><span className="k">Total Item</span><span className="v">{details.length} barang</span></div>
+            <div><span className="k">Status</span><span className="v">{statusBerjangka ? (sudahLunas ? 'Lunas (Berjangka)' : 'Berjangka') : 'Lunas'}</span></div>
+          </div>
+        </header>
+
+        <section className="nota-info-grid">
+          <div className="nota-info-card">
+            <span className="k">Pelanggan</span>
+            <span className="v">{pelanggan.nama || '-'}</span>
+            {pelanggan.no_tlp && <div className="k" style={{ marginTop: 4 }}>Telp. {pelanggan.no_tlp}</div>}
+          </div>
+        </section>
+
+        <section className="nota-status">
+          <p className="label">Status Pembayaran</p>
+          <div className={`status-chip ${sudahLunas ? 'success' : 'warning'}`}>
+            {statusBerjangka ? (sudahLunas ? 'Lunas - Berjangka' : 'Pembayaran Berjangka') : 'Lunas'}
+          </div>
+          <div className="amounts">
+            <div className="amount"><span className="k">Total Tagihan</span><span className="v">Rp {totalKeseluruhan.toLocaleString('id-ID')}</span></div>
+            <div className="amount"><span className="k">Telah Dibayar</span><span className="v">Rp {totalBayar.toLocaleString('id-ID')}</span></div>
+            <div className="amount"><span className="k">Sisa</span><span className={`v ${sisaBayar > 0 ? 'danger' : ''}`}>Rp {sisaBayar.toLocaleString('id-ID')}</span></div>
+          </div>
+          {statusBerjangka && (transaksi.berjangka || []).length > 0 && (
+            <div className="nota-installments">
+              {(transaksi.berjangka || []).map((b: any, i: number) => (
+                <div className="row" key={b.id || i}>
+                  <span>Angsuran {i + 1} - Jatuh Tempo {formatDateWithMonth(b.tgl_jatuh_tempo)}</span>
+                  <span className="amt">Rp {toNumber(b.jml_bayar).toLocaleString('id-ID')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <div className="nota-section-title">Rincian Barang</div>
+          <table className="nota-table">
+            <thead>
+              <tr>
+                <th className="center" style={{ width: '5%' }}>No</th>
+                <th style={{ width: '13%' }}>Kode</th>
+                <th>Barang</th>
+                <th className="center">Yard</th>
+                <th className="center">Rol</th>
+                <th className="center">Retur Yard</th>
+                <th className="center">Retur Rol</th>
+                <th className="num">Harga/Yard</th>
+                <th className="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {details.map((detail: any, idx: number) => {
+                const actualYard = Math.max(0, toNumber(detail.jml_yard) - toNumber(detail.jml_yard_retur));
+                const rowTotal = actualYard * toNumber(detail.harga_satuan);
+                return (
+                  <tr key={idx}>
+                    <td className="center">{idx + 1}</td>
+                    <td className="mono">{detail.barang?.kd_barang || detail.kode_barang || '-'}</td>
+                    <td>{detail.barang?.nama_barang || detail.nama_barang || '-'}</td>
+                    <td className="center">{toNumber(detail.jml_yard).toLocaleString('id-ID')}</td>
+                    <td className="center">{toNumber(detail.jml_rol).toLocaleString('id-ID')}</td>
+                    <td className="center">{toNumber(detail.jml_yard_retur).toLocaleString('id-ID')}</td>
+                    <td className="center">{toNumber(detail.jml_rol_retur).toLocaleString('id-ID')}</td>
+                    <td className="num">Rp {toNumber(detail.harga_satuan).toLocaleString('id-ID')}</td>
+                    <td className="num">Rp {rowTotal.toLocaleString('id-ID')}</td>
+                  </tr>
+                );
+              })}
+              {details.length === 0 && (
+                <tr><td colSpan={9} className="center">Tidak ada barang.</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="nota-table-summary">
+            <span><b>Total Yard:</b> {totalQtyYard.toLocaleString('id-ID')}</span>
+            <span><b>Total Rol:</b> {totalQtyRol.toLocaleString('id-ID')}</span>
+            <span><b>Retur:</b> {totalReturYard.toLocaleString('id-ID')} yard / {totalReturRol.toLocaleString('id-ID')} rol</span>
+          </div>
+        </section>
+
+        <section className="nota-totals">
+          <div className="row"><span>Gross</span><span className="amt">Rp {grossBeforeRetur.toLocaleString('id-ID')}</span></div>
+          <div className="row"><span>Retur</span><span className="amt">- Rp {totalReturNominal.toLocaleString('id-ID')}</span></div>
+          <div className="row"><span>Discount ({discountLabel})</span><span className="amt">- Rp {discountNominal.toLocaleString('id-ID')}</span></div>
+          <div className="row"><span>Subtotal</span><span className="amt">Rp {subtotal.toLocaleString('id-ID')}</span></div>
+          <div className="row"><span>PPN ({ppnLabel})</span><span className="amt">+ Rp {ppnNominal.toLocaleString('id-ID')}</span></div>
+          <div className="row grand"><span>Total Tagihan</span><span className="amt">Rp {totalKeseluruhan.toLocaleString('id-ID')}</span></div>
+        </section>
+
+        <section className="nota-notes">
+          <div className="k">Catatan</div>
+          <div>{transaksi.catatan || 'Tidak ada catatan tambahan.'}</div>
+        </section>
+
+        <footer className="nota-footer">
+          <p style={{ margin: 0 }}>Terima kasih telah mempercayakan kebutuhan tekstil kepada kami.</p>
+          <p style={{ margin: 0 }}>Hubungi admin untuk bantuan lebih lanjut.</p>
+        </footer>
+      </div>
+    );
+  };
+
   const renderSuratJalan = (transaksi: any, pelanggan: any, expedisiValue: string, alamat: string, tanggalValue?: string) => {
     if (!transaksi) return null;
     const details = transaksi.details || [];
@@ -2227,106 +2470,213 @@ export default function BarangKeluar() {
 
     const caption = 'NOTA PEMBELIAN BARANG - Zea Textile';
 
-    // Find the hidden modern layout inside the print wrapper
-    const printSourceWrapper = document.querySelector('.print-source-wrapper') as HTMLElement | null;
-    const printEl = printSourceWrapper?.querySelector('.print-content-modern') as HTMLElement | null;
-    if (!printEl) return toast.error('Konten nota untuk dicetak tidak ditemukan');
-    let captureContainer: HTMLDivElement | null = null;
-    let captureEl: HTMLElement | null = null;
-
     setSendingWA(true);
     try {
-      try { printSourceWrapper?.classList.add('print-ready'); } catch (e) { /* ignore */ }
-      // Dynamically import libraries to avoid hard dependency at build-time
-      const [{ default: html2canvas }, jspdfModule] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf')
+      const [jspdfModule, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
       ]);
       const { jsPDF } = jspdfModule as any;
+      const autoTable = (autoTableModule as any).default || (autoTableModule as any);
 
-      // Render DOM to canvas by cloning the modern layout into a visible container
-      let canvas: HTMLCanvasElement | null = null;
-      captureEl = printEl.cloneNode(true) as HTMLElement;
-      captureEl.classList.add('print-pdf');
-      captureContainer = document.createElement('div');
-      captureContainer.style.position = 'fixed';
-      captureContainer.style.left = '0';
-      captureContainer.style.top = '0';
-      captureContainer.style.width = '100%';
-      captureContainer.style.minHeight = '100vh';
-      captureContainer.style.padding = '24px';
-      captureContainer.style.background = '#f8fafc';
-      captureContainer.style.zIndex = '2147483647';
-      captureContainer.style.overflow = 'auto';
-      captureEl.style.margin = '0 auto';
-      captureEl.style.maxWidth = '820px';
-      captureEl.style.position = 'relative';
-      captureEl.style.left = '0';
-      captureEl.style.top = '0';
-      captureEl.style.opacity = '1';
-      captureContainer.appendChild(captureEl);
-      document.body.appendChild(captureContainer);
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      canvas = await html2canvas(captureEl as HTMLElement, {
-        scale: 3.5,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        foreignObjectRendering: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight,
+      const details = transaksi.details || [];
+      const toNumber = (v: any) => Number(v || 0);
+      const money = (n: number) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+
+      const grossBeforeRetur = details.reduce((s: number, d: any) => s + (toNumber(d.jml_yard) * toNumber(d.harga_satuan)), 0);
+      const totalReturNominal = details.reduce((s: number, d: any) => s + (toNumber(d.jml_yard_retur) * toNumber(d.harga_satuan)), 0);
+      const netBarang = Math.max(0, grossBeforeRetur - totalReturNominal);
+      const discountNominal = transaksi.tipe_discount === 'persen'
+        ? (netBarang * toNumber(transaksi.jml_discount)) / 100
+        : toNumber(transaksi.jml_discount);
+      const subtotal = netBarang - discountNominal;
+      const ppnNominal = transaksi.tipe_ppn === 'persen'
+        ? (subtotal * toNumber(transaksi.jml_ppn)) / 100
+        : toNumber(transaksi.jml_ppn);
+      const totalKeseluruhan = subtotal + ppnNominal;
+      const statusBerjangka = transaksi.status_pembayaran === '1';
+      const totalBayar = statusBerjangka ? calculateTotalPayment(transaksi.berjangka || []) : totalKeseluruhan;
+      const sisaBayar = Math.max(0, totalKeseluruhan - totalBayar);
+      const sudahLunas = !statusBerjangka || totalBayar >= totalKeseluruhan;
+      const discountLabel = transaksi.tipe_discount === 'persen' ? `${transaksi.jml_discount || 0}%` : 'Nominal';
+      const ppnLabel = transaksi.tipe_ppn === 'persen' ? `${transaksi.jml_ppn || 0}%` : 'Nominal';
+      const statusText = statusBerjangka ? (sudahLunas ? 'Lunas (Berjangka)' : 'Berjangka') : 'Lunas';
+
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 12;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      // Header kiri: toko
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text(String(storeProfile?.nama_toko || 'Zea Textile'), margin, y + 4);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      if (storeProfile?.alamat) {
+        const addr = doc.splitTextToSize(String(storeProfile.alamat), contentW * 0.62);
+        doc.text(addr, margin, y);
+        y += addr.length * 4;
+      }
+      if (storePhones.length > 0) {
+        const ph = storePhones.map((p: { label: string; value: string }) => `${p.label}: ${p.value}`).join('  |  ');
+        doc.text(ph, margin, y);
+        y += 4;
+      }
+      if (storeProfile?.rekening || storeProfile?.nama_rekening) {
+        doc.text([storeProfile?.rekening, storeProfile?.nama_rekening].filter(Boolean).join(' · '), margin, y);
+        y += 4;
+      }
+
+      // Header kanan: judul & meta
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text('NOTA PEMBELIAN', pageW - margin, margin + 4, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.text(`No. Nota: #${transaksi.id}`, pageW - margin, margin + 10, { align: 'right' });
+      doc.text(`Tanggal: ${formatDateWithMonth(transaksi.tgl_transaksi)}`, pageW - margin, margin + 15, { align: 'right' });
+      doc.text(`Kasir: ${transaksi.penginput?.username || '-'}`, pageW - margin, margin + 20, { align: 'right' });
+
+      y = Math.max(y, margin + 22);
+      doc.setDrawColor(15, 23, 42);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, pageW - margin, y);
+      y += 6;
+
+      // Pelanggan & status
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pelanggan', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(transaksi.pelanggan?.nama || '-'), margin + 24, y);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Status', pageW - margin - 70, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(statusText, pageW - margin, y, { align: 'right' });
+      y += 6;
+
+      doc.setFontSize(9.5);
+      doc.text(`Total: ${money(totalKeseluruhan)}    Dibayar: ${money(totalBayar)}    Sisa: ${money(sisaBayar)}`, margin, y);
+      y += 7;
+
+      // Tabel item
+      const head = [['No', 'Kode', 'Barang', 'Yard', 'Rol', 'Retur Y', 'Retur R', 'Harga/Yard', 'Total']];
+      const body = details.map((d: any, i: number) => {
+        const actualYard = Math.max(0, toNumber(d.jml_yard) - toNumber(d.jml_yard_retur));
+        const rowTotal = actualYard * toNumber(d.harga_satuan);
+        return [
+          String(i + 1),
+          d.barang?.kd_barang || d.kode_barang || '-',
+          d.barang?.nama_barang || d.nama_barang || '-',
+          toNumber(d.jml_yard).toLocaleString('id-ID'),
+          toNumber(d.jml_rol).toLocaleString('id-ID'),
+          toNumber(d.jml_yard_retur).toLocaleString('id-ID'),
+          toNumber(d.jml_rol_retur).toLocaleString('id-ID'),
+          money(toNumber(d.harga_satuan)),
+          money(rowTotal),
+        ];
       });
 
-      if (!canvas) throw new Error('Gagal merender nota menjadi canvas');
-      // Use JPEG with high quality for clearer text while keeping size reasonable.
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-      // Create PDF sized to match nota width
-      const pdf = new jsPDF({
-        orientation: canvas.height >= canvas.width ? 'portrait' : 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
+      autoTable(doc, {
+        head,
+        body,
+        startY: y,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8.5, cellPadding: 1.6, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.1, overflow: 'linebreak' },
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          1: { cellWidth: 22 },
+          2: { cellWidth: 'auto' },
+          3: { halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'center' },
+          6: { halign: 'center' },
+          7: { halign: 'right', cellWidth: 22 },
+          8: { halign: 'right', cellWidth: 24 },
+        },
+        didDrawPage: () => {
+          doc.setFontSize(8);
+          doc.setTextColor(150, 150, 150);
+          doc.text(`Halaman ${doc.internal.getNumberOfPages()}`, pageW - margin, pageH - 6, { align: 'right' });
+          doc.setTextColor(15, 23, 42);
+        },
       });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      let afterY = ((doc as any).lastAutoTable?.finalY ?? y) + 6;
 
-      // Export PDF as blob
-      const pdfBlob = pdf.output && typeof pdf.output === 'function'
-        ? pdf.output('blob')
-        : null;
+      // Ringkasan total
+      const totalsRows: Array<[string, string, boolean]> = [
+        ['Gross', money(grossBeforeRetur), false],
+        ['Retur', '- ' + money(totalReturNominal), false],
+        [`Discount (${discountLabel})`, '- ' + money(discountNominal), false],
+        ['Subtotal', money(subtotal), false],
+        [`PPN (${ppnLabel})`, '+ ' + money(ppnNominal), false],
+        ['Total Tagihan', money(totalKeseluruhan), true],
+      ];
+      const boxW = 82;
+      const boxX = pageW - margin - boxW;
+      if (afterY + totalsRows.length * 5.5 + 6 > pageH - 12) {
+        doc.addPage();
+        afterY = margin;
+      }
+      doc.setFontSize(9);
+      totalsRows.forEach((r, idx) => {
+        const yy = afterY + idx * 5.5;
+        doc.setFont('helvetica', r[2] ? 'bold' : 'normal');
+        doc.text(r[0], boxX, yy);
+        doc.text(r[1], pageW - margin, yy, { align: 'right' });
+      });
+      afterY += totalsRows.length * 5.5 + 4;
 
-      if (!pdfBlob) throw new Error('Gagal membuat PDF');
+      // Catatan
+      if (afterY + 18 > pageH - 12) {
+        doc.addPage();
+        afterY = margin;
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Catatan:', margin, afterY);
+      doc.setFont('helvetica', 'normal');
+      const noteLines = doc.splitTextToSize(String(transaksi.catatan || 'Tidak ada catatan tambahan.'), contentW);
+      doc.text(noteLines, margin, afterY + 5);
+      afterY += 5 + noteLines.length * 4;
 
-      // Prepare file and send via service
-      const fileName = `Nota Pembelian Zea Textile- Nomor Transaksi : ${transaksi.id || Date.now()}.pdf`;
+      doc.setFontSize(8.5);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Terima kasih telah mempercayakan kebutuhan tekstil kepada kami.', pageW / 2, pageH - 12, { align: 'center' });
+
+      const customerName = String(transaksi.pelanggan?.nama || 'Pelanggan');
+      const documentNumber = `NOTA-${String(transaksi.id || 0).padStart(6, '0')}`;
+      const fileName = `Nota Pembelian ${documentNumber} - ${customerName}.pdf`
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const pdfBlob = doc.output('blob');
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       const data = await sendNotaFile(file, number, caption);
-      // API returns { ok: true, id: '...' } on success
       if (data && data.ok === true) {
         toast.success('nota berhasil dikirim');
-        // keep the print modal open after successful send
       } else {
         toast.error('nota gagal dikirim');
       }
     } catch (err: any) {
       console.error('Error sending nota PDF via server', err);
       if (err && err.code === 'ERR_MODULE_NOT_FOUND') {
-        toast.error('Butuh library tambahan: jalankan `npm i html2canvas jspdf`');
-      } else if (err && /html2canvas/i.test(String(err.message || ''))) {
-        toast.error('Gagal merender konten nota menjadi PDF');
+        toast.error('Butuh library tambahan: jalankan `npm i jspdf jspdf-autotable`');
       } else {
         toast.error('Terjadi kesalahan saat mengirim file nota');
       }
     } finally {
-      try { captureContainer?.remove(); } catch (e) { /* ignore */ }
-      captureEl = null;
-      captureContainer = null;
-      try { printSourceWrapper?.classList.remove('print-ready'); } catch (e) { /* ignore */ }
       setSendingWA(false);
     }
   };
@@ -2714,8 +3064,8 @@ export default function BarangKeluar() {
       {/* Modal Cetak Nota */}
       {showPrintModal && selectedTransaksiForPrint && (
         <div className="modal-overlay fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999999]">
-          <style>{printStyles}</style>
-          <div className="modal-content bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <style>{notaStyles}</style>
+          <div className="modal-content bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             {/* Header Modal */}
             <div className="modal-header flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
               <h2 className="text-xl font-bold text-gray-800">Cetak Nota</h2>
@@ -2732,182 +3082,22 @@ export default function BarangKeluar() {
               </div>
             )}
 
-            {/* Content Modal - Nota (tetap menggunakan layout lama) */}
-            {!loadingPrintData && (
-              <div className="print-content p-6 bg-white text-gray-800">
-                <div className="border-b pb-4 mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">NOTA PEMBELIAN BARANG - Zea Textile</h3>
-                  <p className="text-sm text-gray-600">No. Transaksi: {selectedTransaksiForPrint.id}</p>
-                </div>
-
-                {storeProfile && (
-                  <div className="mb-4 pb-4 border-b text-sm text-gray-700 space-y-1">
-                    <p className="text-base font-semibold text-gray-900">{storeProfile.nama_toko}</p>
-                    {storeProfile.alamat && <p>{storeProfile.alamat}</p>}
-                    {storePhones.length > 0 && (
-                      <div className="flex flex-col gap-1 pt-1">
-                        <p className="text-xs font-semibold tracking-wide text-gray-500">Kontak / Nomor Telepon · WhatsApp</p>
-                        <div className="flex flex-wrap gap-4">
-                          {storePhones.map((phone: { label: string; value: string }) => (
-                            <span key={phone.label} className="text-xs uppercase tracking-wide text-gray-500">
-                              {phone.label}: <span className="text-sm font-medium text-gray-800 normal-case">{phone.value}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {(storeProfile.rekening || storeProfile.nama_rekening) && (
-                      <div className="text-sm text-gray-800 pt-1">
-                        {storeProfile.rekening && <p>{storeProfile.rekening}</p>}
-                        {storeProfile.nama_rekening && <p>{storeProfile.nama_rekening}</p>}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">Tanggal:</p>
-                    <p className="text-sm text-gray-700">{formatDateWithMonth(selectedTransaksiForPrint.tgl_transaksi)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">Pelanggan :</p>
-                    <p className="text-sm text-gray-700">{selectedTransaksiForPrint.pelanggan?.nama || '-'}</p>
-                  </div>
-                </div>
-
-                {/* Status Pembayaran (ditampilkan di modal dan pada PDF nota) */}
-                <div className="mb-4 pb-4 border-b">
-                  <p className="text-sm font-semibold text-gray-800">Status Pembayaran:</p>
-                  {(() => {
-                    const totalBayar = calculateTotalPayment(selectedTransaksiForPrint.berjangka || []);
-                    const totalTransaksi = Number(selectedTransaksiForPrint.total_transaksi || 0);
-                    if (selectedTransaksiForPrint.status_pembayaran === "1") {
-                      const sudahLunasBerjangka = totalBayar >= totalTransaksi;
-                      return (
-                        <div className="text-sm text-gray-700 mt-2">
-                          <div className={`inline-block text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${sudahLunasBerjangka ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                            {sudahLunasBerjangka ? 'Lunas - Pembayaran Berjangka' : 'Pembayaran Berjangka'}
-                          </div>
-                          <div className="mt-3 space-y-2 installments-list">
-                            {(selectedTransaksiForPrint.berjangka || []).length === 0 && (
-                              <div className="text-sm text-gray-600">Tidak ada data cicilan.</div>
-                            )}
-                            {(selectedTransaksiForPrint.berjangka || []).map((b: any, i: number) => (
-                              <div key={b.id || i} className="bg-gray-50 p-2 rounded">
-                                <div className="flex justify-between items-center">
-                                  <div className="text-sm pr-4 whitespace-nowrap">Angsuran {i + 1} - Jatuh Tempo: {formatDateWithMonth(b.tgl_jatuh_tempo)}</div>
-                                  <div className="text-sm font-semibold text-right whitespace-nowrap" style={{ fontFamily: 'Roboto Mono, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums', minWidth: '200px' }}>
-                                    Rp {Number(b.jml_bayar || 0).toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            <div className="flex justify-between mt-2 text-sm items-center">
-                              <div>Total Terbayar:</div>
-                              <div className="font-semibold text-right whitespace-nowrap" style={{ fontFamily: 'Roboto Mono, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums', minWidth: '200px' }}>Rp {totalBayar.toLocaleString()}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="text-sm text-gray-700 mt-2">
-                        <div className="inline-block text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap bg-green-100 text-green-800">Lunas</div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Tabel Detail Barang */}
-                <div className="mb-4">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b-2 bg-gray-100">
-                        <th className="text-left py-2 px-2 text-gray-800">No</th>
-                        <th className="text-left py-2 px-2 text-gray-800">Barang</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Yard</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Rol</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Retur Yard</th>
-                        <th className="text-center py-2 px-2 text-gray-800">Retur Rol</th>
-                        <th className="text-right py-2 px-2 text-gray-800">Harga Per Yard</th>
-                        <th className="text-right py-2 px-2 text-gray-800">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(selectedTransaksiForPrint.details || []).map((detail: any, idx: number) => {
-                        const actualYard = Math.max(0, (detail.jml_yard || 0) - (detail.jml_yard_retur || 0));
-                        const rowTotal = actualYard * detail.harga_satuan;
-                        return (
-                          <tr key={idx} className="border-b">
-                            <td className="py-2 text-gray-800">{idx + 1}</td>
-                            <td className="py-2 text-gray-800">{detail.barang?.nama_barang || '-'}</td>
-                            <td className="text-center py-2 text-gray-800">{detail.jml_yard}</td>
-                            <td className="text-center py-2 text-gray-800">{detail.jml_rol}</td>
-                            <td className="text-center py-2 text-gray-800" style={{ backgroundColor: (detail.jml_yard_retur || 0) > 0 ? '#fed7aa' : 'transparent' }}>​{detail.jml_yard_retur || 0}</td>
-                            <td className="text-center py-2 text-gray-800" style={{ backgroundColor: (detail.jml_rol_retur || 0) > 0 ? '#fed7aa' : 'transparent' }}>{detail.jml_rol_retur || 0}</td>
-                            <td className="text-right py-2 text-gray-800">Rp {Number(detail.harga_satuan).toLocaleString()}</td>
-                            <td className="text-right py-2 text-gray-800">Rp {rowTotal.toLocaleString()}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Total dengan Breakdown */}
-                <div className="space-y-2 pb-4 border-b text-sm">
-                  {(() => {
-                    const totalBarang = (selectedTransaksiForPrint.details || []).reduce((sum: number, detail: any) => {
-                      const actualYard = Math.max(0, (detail.jml_yard || 0) - (detail.jml_yard_retur || 0));
-                      return sum + (actualYard * detail.harga_satuan);
-                    }, 0);
-
-                    const discountNominal = selectedTransaksiForPrint.tipe_discount === "persen"
-                      ? (totalBarang * selectedTransaksiForPrint.jml_discount) / 100
-                      : selectedTransaksiForPrint.jml_discount;
-
-                    const subtotal = totalBarang - discountNominal;
-
-                    const ppnNominal = selectedTransaksiForPrint.tipe_ppn === "persen"
-                      ? (subtotal * selectedTransaksiForPrint.jml_ppn) / 100
-                      : selectedTransaksiForPrint.jml_ppn;
-
-                    const totalKeseluruhan = subtotal + ppnNominal;
-
-                    return (
-                      <>
-                        <div>
-                          <span>Total Harga Barang:</span>
-                          <span>Rp {totalBarang.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>Discount:</span>
-                          <span>- Rp {discountNominal.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>Subtotal:</span>
-                          <span>Rp {subtotal.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span>PPN:</span>
-                          <span>+ Rp {ppnNominal.toLocaleString()}</span>
-                        </div>
-                        <div className="font-bold text-base">
-                          <span>Total Harga Keseluruhan:</span>
-                          <span>Rp {totalKeseluruhan.toLocaleString()}</span>
-                        </div>
-                      </>
-                    );
-                  })()}
+            {/* Pratinjau nota (sama persis dengan hasil Print & PDF) */}
+            {!loadingPrintData && selectedTransaksiForPrint && (
+              <div className="p-4 bg-gray-50">
+                <div className="nota-preview bg-white rounded-lg border border-gray-200 p-4">
+                  {renderNota(selectedTransaksiForPrint)}
                 </div>
               </div>
             )}
 
-            {!loadingPrintData && selectedTransaksiForPrint && (
-              <div className="print-source-wrapper" aria-hidden="true">
-                {renderModernNota(selectedTransaksiForPrint)}
-              </div>
+            {/* Node khusus cetak (portal ke <body>) — hanya tampil saat print */}
+            {!loadingPrintData && selectedTransaksiForPrint && createPortal(
+              <div id="nota-print-root">
+                <style>{notaStyles}</style>
+                {renderNota(selectedTransaksiForPrint)}
+              </div>,
+              document.body
             )}
 
             {/* Footer Modal */}
