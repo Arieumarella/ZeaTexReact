@@ -5,7 +5,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { getAllCustomers, Customer, getAllBarang, Barang, createTransaksiKeluar } from '../../service/barangKeluarService';
+import { getAllStokBarang } from '../../service/stokBarangService';
 import { getErrorMessage } from '../../utils/errorMessage';
+import Swal from 'sweetalert2';
 
 export default function TambahKeluar() {
   const [tanggal, setTanggal] = useState("");
@@ -47,6 +49,102 @@ export default function TambahKeluar() {
     : ppnValue;
   const totalKeseluruhan = subtotal + ppnNominal;
 
+  const checkNegativeStock = async (): Promise<boolean> => {
+    const esc = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+      );
+
+    // Gabungkan jumlah keluar per kode barang (baris duplikat dijumlahkan).
+    const outMap = new Map<string, { nama: string; kode: string; yard: number; rol: number }>();
+    for (const b of barangList) {
+      const kode = (b.kodeBarang || "").trim();
+      if (!kode) continue;
+      const cur = outMap.get(kode) || { nama: b.namaBarang || "", kode, yard: 0, rol: 0 };
+      cur.yard += Number(b.jumlahYard) || 0;
+      cur.rol += Number(b.jumlahRol) || 0;
+      outMap.set(kode, cur);
+    }
+    if (outMap.size === 0) return true;
+
+    // Ambil stok terbaru (yard + rol) tepat sebelum submit.
+    const res = await getAllStokBarang(1, "", true);
+    if (!res.status) return false;
+    const stockMap = new Map(res.data.map((s) => [s.kd_barang, s] as [string, typeof s]));
+
+    const affected: Array<{
+      nama: string;
+      kode: string;
+      stokYard: number;
+      stokRol: number;
+      keluarYard: number;
+      keluarRol: number;
+      hasilYard: number | null;
+      hasilRol: number | null;
+    }> = [];
+
+    outMap.forEach((out) => {
+      const stock = stockMap.get(out.kode);
+      const stokYard = Number(stock?.jml_yard ?? 0);
+      const stokRol = Number(stock?.jml_rol ?? 0);
+      const hasilYard = out.yard > 0 ? stokYard - out.yard : null;
+      const hasilRol = out.rol > 0 ? stokRol - out.rol : null;
+      const minus =
+        (hasilYard !== null && hasilYard < 0) || (hasilRol !== null && hasilRol < 0);
+      if (minus) {
+        affected.push({
+          nama: out.nama || stock?.nama_barang || "",
+          kode: out.kode,
+          stokYard,
+          stokRol,
+          keluarYard: out.yard,
+          keluarRol: out.rol,
+          hasilYard,
+          hasilRol,
+        });
+      }
+    });
+
+    if (affected.length === 0) return true;
+
+    const hasil = (v: number | null, unit: string) =>
+      v === null
+        ? ""
+        : `<span style="color:${v < 0 ? "#d33" : "#111"};${v < 0 ? "font-weight:600;" : ""}">${v} ${unit}</span>`;
+
+    const html = `
+      <div style="text-align:left;font-size:14px">
+        <p style="margin:0 0 8px">Transaksi ini akan membuat stok barang berikut menjadi <b>minus</b>:</p>
+        <ul style="margin:0;padding-left:18px">
+          ${affected
+            .map(
+              (a) => `
+            <li style="margin-bottom:10px">
+              <div><b>${esc(a.nama) || "-"}</b> <span style="color:#6b7280">(${esc(a.kode)})</span></div>
+              <div>Stok: ${a.stokYard} yard / ${a.stokRol} rol</div>
+              <div>Keluar: ${a.keluarYard} yard / ${a.keluarRol} rol</div>
+              <div>Hasil: ${[hasil(a.hasilYard, "yard"), hasil(a.hasilRol, "rol")].filter(Boolean).join(" / ")}</div>
+            </li>`
+            )
+            .join("")}
+        </ul>
+      </div>
+    `;
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Stok akan menjadi minus",
+      html,
+      showCancelButton: true,
+      confirmButtonText: "Ya, lanjutkan",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      focusCancel: true,
+    });
+    return result.isConfirmed;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customer) {
@@ -57,6 +155,9 @@ export default function TambahKeluar() {
       toast.error('Tambahkan minimal 1 barang.');
       return;
     }
+
+    const proceed = await checkNegativeStock();
+    if (!proceed) return;
 
     setLoading(true);
     try {
