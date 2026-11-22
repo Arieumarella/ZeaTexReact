@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast } from 'react-toastify';
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { getAllCustomers, Customer, getAllBarang, Barang, getTransaksiKeluarById, updateTransaksiKeluar } from '../../service/barangKeluarService';
+import { getAllStokBarang } from '../../service/stokBarangService';
 import { getErrorMessage } from '../../utils/errorMessage';
+import Swal from 'sweetalert2';
 
 export default function EditKeluar() {
   const { id } = useParams();
@@ -40,6 +42,9 @@ export default function EditKeluar() {
   const [hapusNota, setHapusNota] = useState(false);
   const [notaKey, setNotaKey] = useState(Date.now());
 
+  // Detail asli transaksi (untuk menghitung rollback stok saat edit)
+  const originalDetailsRef = useRef<any[]>([]);
+
   // Fetch data on mount
   useEffect(() => {
     let mounted = true;
@@ -54,6 +59,7 @@ export default function EditKeluar() {
           const trans = await getTransaksiKeluarById(parseInt(id));
           console.log('Fetched transaksi keluar data:', trans);
           if (mounted && trans) {
+            originalDetailsRef.current = trans.details || [];
             // Extract date part only (YYYY-MM-DD) from ISO timestamp
             const tanggalFormatted = trans.tgl_transaksi ? trans.tgl_transaksi.split('T')[0] : '';
             setTanggal(tanggalFormatted);
@@ -112,6 +118,131 @@ export default function EditKeluar() {
     return () => { mounted = false; };
   }, [id]);
 
+  const checkNegativeStock = async (): Promise<boolean> => {
+    const esc = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+      );
+
+    type Net = { yard: number; rol: number };
+
+    // Net keluar baru per id_barang (baris duplikat digabung).
+    const newNet = new Map<number, Net>();
+    for (const b of barangList) {
+      const kode = (b.kodeBarang || "").trim();
+      if (!kode) continue;
+      const barang = allBarang.find((x) => x.kd_barang === kode);
+      if (!barang) continue;
+      const cur = newNet.get(barang.id) || { yard: 0, rol: 0 };
+      cur.yard += (Number(b.jumlahYard) || 0) - (Number(b.jumlahYardRetur) || 0);
+      cur.rol += (Number(b.jumlahRol) || 0) - (Number(b.jumlahRolRetur) || 0);
+      newNet.set(barang.id, cur);
+    }
+
+    // Net keluar lama per id_barang (dari detail asli transaksi).
+    const oldNet = new Map<number, Net>();
+    for (const od of originalDetailsRef.current) {
+      const idBarang = Number(od?.id_barang);
+      if (!idBarang) continue;
+      const cur = oldNet.get(idBarang) || { yard: 0, rol: 0 };
+      cur.yard += (Number(od.jml_yard) || 0) - (Number(od.jml_yard_retur) || 0);
+      cur.rol += (Number(od.jml_rol) || 0) - (Number(od.jml_rol_retur) || 0);
+      oldNet.set(idBarang, cur);
+    }
+
+    const ids = new Set<number>([...oldNet.keys(), ...newNet.keys()]);
+    if (ids.size === 0) return true;
+
+    // Ambil stok terbaru (yard + rol) tepat sebelum simpan.
+    const res = await getAllStokBarang(1, "", true);
+    if (!res.status) return false;
+    const stockById = new Map(res.data.map((s) => [s.id, s] as [number, typeof s]));
+
+    const affected: Array<{
+      nama: string;
+      kode: string;
+      stokYard: number;
+      stokRol: number;
+      oldYard: number;
+      oldRol: number;
+      newYard: number;
+      newRol: number;
+      hasilYard: number;
+      hasilRol: number;
+      minusYard: boolean;
+      minusRol: boolean;
+    }> = [];
+
+    ids.forEach((idBarang) => {
+      const stock = stockById.get(idBarang);
+      if (!stock) return;
+      const o = oldNet.get(idBarang) || { yard: 0, rol: 0 };
+      const n = newNet.get(idBarang) || { yard: 0, rol: 0 };
+      const deltaYard = n.yard - o.yard;
+      const deltaRol = n.rol - o.rol;
+      const stokYard = Number(stock.jml_yard ?? 0);
+      const stokRol = Number(stock.jml_rol ?? 0);
+      // Hasil akhir = stok saat ini + net lama - net baru = stok - delta
+      const hasilYard = stokYard - deltaYard;
+      const hasilRol = stokRol - deltaRol;
+      const minusYard = deltaYard > 0 && hasilYard < 0;
+      const minusRol = deltaRol > 0 && hasilRol < 0;
+      if (minusYard || minusRol) {
+        affected.push({
+          nama: stock.nama_barang,
+          kode: stock.kd_barang,
+          stokYard,
+          stokRol,
+          oldYard: o.yard,
+          oldRol: o.rol,
+          newYard: n.yard,
+          newRol: n.rol,
+          hasilYard,
+          hasilRol,
+          minusYard,
+          minusRol,
+        });
+      }
+    });
+
+    if (affected.length === 0) return true;
+
+    const hasil = (v: number, minus: boolean) =>
+      `<span style="color:${minus ? "#d33" : "#111"};${minus ? "font-weight:600;" : ""}">${v}</span>`;
+
+    const html = `
+      <div style="text-align:left;font-size:14px">
+        <p style="margin:0 0 8px">Perubahan ini akan membuat stok barang berikut menjadi <b>minus</b>:</p>
+        <ul style="margin:0;padding-left:18px">
+          ${affected
+            .map(
+              (a) => `
+            <li style="margin-bottom:10px">
+              <div><b>${esc(a.nama) || "-"}</b> <span style="color:#6b7280">(${esc(a.kode)})</span></div>
+              <div>Stok saat ini: ${a.stokYard} yard / ${a.stokRol} rol</div>
+              <div>Keluar baru (net): ${a.newYard} yard / ${a.newRol} rol <span style="color:#6b7280">(sebelumnya: ${a.oldYard} yard / ${a.oldRol} rol)</span></div>
+              <div>Hasil: ${hasil(a.hasilYard, a.minusYard)} yard / ${hasil(a.hasilRol, a.minusRol)} rol</div>
+            </li>`
+            )
+            .join("")}
+        </ul>
+      </div>
+    `;
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Stok akan menjadi minus",
+      html,
+      showCancelButton: true,
+      confirmButtonText: "Ya, lanjutkan",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      focusCancel: true,
+    });
+    return result.isConfirmed;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customer) {
@@ -122,6 +253,9 @@ export default function EditKeluar() {
       toast.error('Tambahkan minimal 1 barang.');
       return;
     }
+
+    const proceed = await checkNegativeStock();
+    if (!proceed) return;
 
     setSaving(true);
     try {
