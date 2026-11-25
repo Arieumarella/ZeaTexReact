@@ -26,7 +26,8 @@ export interface StokBarangResponse {
 export async function getAllStokBarang(
   page: number = 1,
   search: string = "",
-  all: boolean = false
+  all: boolean = false,
+  minus: boolean = false
 ): Promise<StokBarangResponse> {
   try {
     const params = new URLSearchParams();
@@ -36,6 +37,7 @@ export async function getAllStokBarang(
       params.append('page', String(page));
     }
     if (search) params.append('search', search);
+    if (minus) params.append('minus', 'true');
     const response = await fetch(`${API_BASE}/barang/stockBarang?${params.toString()}`, {
       method: 'GET',
       headers: getAuthHeaders(),

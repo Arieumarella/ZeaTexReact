@@ -25,6 +25,7 @@ export default function StokBarang() {
   const [data, setData] = useState<StokBarang[]>([]);
   const [_loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(() => sessionStorage.getItem("stok_barang_filter") || "");
+  const [minus, setMinus] = useState(() => sessionStorage.getItem("stok_barang_minus") === "true");
   const [page, setPage] = useState(() => {
     const saved = sessionStorage.getItem("stok_barang_page");
     return saved ? parseInt(saved, 10) || 1 : 1;
@@ -166,14 +167,16 @@ export default function StokBarang() {
   useEffect(() => {
     if (filter) sessionStorage.setItem("stok_barang_filter", filter);
     else sessionStorage.removeItem("stok_barang_filter");
+    if (minus) sessionStorage.setItem("stok_barang_minus", "true");
+    else sessionStorage.removeItem("stok_barang_minus");
     sessionStorage.setItem("stok_barang_page", String(page));
-  }, [filter, page]);
+  }, [filter, minus, page]);
 
   // Fetch data dari API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const result = await getAllStokBarang(page, filter);
+      const result = await getAllStokBarang(page, filter, false, minus);
 
       if (result.status) {
         setData(result.data);
@@ -186,12 +189,12 @@ export default function StokBarang() {
       setLoading(false);
     };
     fetchData();
-  }, [page, filter]);
+  }, [page, filter, minus]);
 
   // Fungsi export Excel
   const handleExportExcel = async () => {
     try {
-      const result = await getAllStokBarang(1, filter, true);
+      const result = await getAllStokBarang(1, filter, true, minus);
       if (result.status) {
         const ws = XLSX.utils.json_to_sheet(result.data.map((item, idx) => ({
           No: idx + 1,
@@ -217,6 +220,11 @@ export default function StokBarang() {
     setPage(1);
   };
 
+  const handleMinusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinus(e.target.checked);
+    setPage(1);
+  };
+
 
   return (
     <>
@@ -236,7 +244,7 @@ export default function StokBarang() {
               Export Excel
             </button>
           </div>
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex items-center gap-3">
             <input
               type="text"
               placeholder="Cari Nama/kode barang..."
@@ -244,6 +252,15 @@ export default function StokBarang() {
               onChange={handleFilterChange}
               className="border rounded px-3 py-2 w-64 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
             />
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-white/90 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={minus}
+                onChange={handleMinusChange}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
+              />
+              Stok Minus
+            </label>
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="max-w-full overflow-x-auto">
@@ -303,8 +320,8 @@ export default function StokBarang() {
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.kd_barang}</TableCell>
-                        <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.jml_yard || 0}</TableCell>
-                        <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.jml_rol || 0}</TableCell>
+                        <TableCell className={`px-4 py-2 border ${(item.jml_yard ?? 0) < 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-800 dark:text-white/90"}`}>{item.jml_yard || 0}</TableCell>
+                        <TableCell className={`px-4 py-2 border ${(item.jml_rol ?? 0) < 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-800 dark:text-white/90"}`}>{item.jml_rol || 0}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.tot_yard_terjual ?? 0}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90">{item.tot_rol_terjual ?? 0}</TableCell>
                         <TableCell className="px-4 py-2 border text-gray-800 dark:text-white/90 hidden lg:table-cell">
