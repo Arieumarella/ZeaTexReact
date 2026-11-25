@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +16,7 @@ export default function TambahKeluar() {
     { namaBarang: "", kodeBarang: "", jumlahYard: "", jumlahRol: "", hargaSatuan: "" }
   ]);
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
   const [discountType, setDiscountType] = useState("persen");
   const [discountValue, setDiscountValue] = useState(0);
   const [ppnType, setPpnType] = useState("persen");
@@ -147,6 +148,7 @@ export default function TambahKeluar() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!customer) {
       toast.error('Pilih customer terlebih dahulu.');
       return;
@@ -156,11 +158,12 @@ export default function TambahKeluar() {
       return;
     }
 
-    const proceed = await checkNegativeStock();
-    if (!proceed) return;
-
+    submittingRef.current = true;
     setLoading(true);
     try {
+      const proceed = await checkNegativeStock();
+      if (!proceed) return;
+
       const payload = {
         id_pelanggan: customer ? parseInt(customer) : null,
         id_user: null,
@@ -209,6 +212,7 @@ export default function TambahKeluar() {
       console.error(err);
       toast.error(getErrorMessage(err, 'Gagal menyimpan data barang keluar.'));
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

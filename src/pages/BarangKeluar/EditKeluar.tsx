@@ -44,6 +44,7 @@ export default function EditKeluar() {
 
   // Detail asli transaksi (untuk menghitung rollback stok saat edit)
   const originalDetailsRef = useRef<any[]>([]);
+  const submittingRef = useRef(false);
 
   // Fetch data on mount
   useEffect(() => {
@@ -245,6 +246,7 @@ export default function EditKeluar() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!customer) {
       toast.error('Pilih customer terlebih dahulu.');
       return;
@@ -254,11 +256,13 @@ export default function EditKeluar() {
       return;
     }
 
-    const proceed = await checkNegativeStock();
-    if (!proceed) return;
-
+    submittingRef.current = true;
     setSaving(true);
+    let success = false;
     try {
+      const proceed = await checkNegativeStock();
+      if (!proceed) return;
+
       const totalBarang = barangList.reduce((sum, barang) => {
         const actualYard = Math.max(0, Number(barang.jumlahYard || 0) - Number(barang.jumlahYardRetur || 0));
         return sum + (actualYard * Number(barang.hargaSatuan));
@@ -305,6 +309,7 @@ export default function EditKeluar() {
         return;
       }
 
+      success = true;
       toast.success('Data barang keluar berhasil diperbarui!');
       // Redirect atau refresh setelah berhasil
       setTimeout(() => {
@@ -314,7 +319,10 @@ export default function EditKeluar() {
       console.error(err);
       toast.error(getErrorMessage(err, 'Gagal memperbarui data barang keluar.'));
     } finally {
-      setSaving(false);
+      if (!success) {
+        submittingRef.current = false;
+        setSaving(false);
+      }
     }
   };
 

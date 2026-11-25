@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast, ToastContainer } from 'react-toastify';
@@ -18,6 +18,7 @@ export default function EditMasuk() {
   ]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
   const [discountType, setDiscountType] = useState("persen");
   const [discountValue, setDiscountValue] = useState(0);
   const [ppnType, setPpnType] = useState("persen");
@@ -115,6 +116,7 @@ export default function EditMasuk() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!suplier) {
       toast.error('Pilih supplier terlebih dahulu.');
       return;
@@ -124,7 +126,9 @@ export default function EditMasuk() {
       return;
     }
 
+    submittingRef.current = true;
     setSaving(true);
+    let success = false;
     try {
       const totalBarang = barangList.reduce((sum, barang) => {
         return sum + (Number(barang.jumlahYard) * Number(barang.hargaSatuan));
@@ -167,6 +171,7 @@ export default function EditMasuk() {
         return;
       }
 
+      success = true;
       toast.success('Data barang masuk berhasil diperbarui!');
       // Redirect atau refresh setelah berhasil
       setTimeout(() => {
@@ -176,7 +181,10 @@ export default function EditMasuk() {
       console.error(err);
       toast.error(getErrorMessage(err, 'Gagal memperbarui data barang masuk.'));
     } finally {
-      setSaving(false);
+      if (!success) {
+        submittingRef.current = false;
+        setSaving(false);
+      }
     }
   };
 
@@ -607,7 +615,7 @@ export default function EditMasuk() {
               </div>
             </div>
             <div className="flex justify-end pt-6">
-              <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+              <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed">{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
             </div>
           </form>
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover style={{ zIndex: 999999 }} />

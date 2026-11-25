@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumTreLevel";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -14,6 +14,7 @@ export default function TambahMasuk() {
     { namaBarang: "", kodeBarang: "", jumlahYard: "", jumlahRol: "", hargaSatuan: "" }
   ]);
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
   // State untuk discount, tipe discount, ppn, tipe ppn, dan catatan
   const [discountType, setDiscountType] = useState("persen");
   const [discountValue, setDiscountValue] = useState(0);
@@ -59,6 +60,7 @@ export default function TambahMasuk() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!suplier) {
       toast.error('Pilih supplier terlebih dahulu.');
       return;
@@ -68,6 +70,7 @@ export default function TambahMasuk() {
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const payload = {
@@ -118,6 +121,7 @@ export default function TambahMasuk() {
       console.error(err);
       toast.error(getErrorMessage(err, 'Gagal menyimpan data barang masuk.'));
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

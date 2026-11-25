@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadCrumTreLevel';
 import ComponentCard from '../../components/common/ComponentCard';
@@ -50,6 +50,7 @@ export default function ReturMasuk() {
   const [transaksi, setTransaksi] = useState<Transaksi | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -111,23 +112,25 @@ export default function ReturMasuk() {
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return;
     if (!transaksi) return;
     // ensure at least one retur > 0
     const hasRetur = transaksi.details.some(d => (d.jml_yard_retur || 0) > 0 || (d.jml_rol_retur || 0) > 0);
     if (!hasRetur) return toast.info('Tidak ada item yang dipilih untuk retur');
 
-    const ok = await Swal.fire({
-      title: 'Konfirmasi Retur',
-      text: 'Yakin ingin menyimpan retur untuk transaksi ini?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, simpan',
-      cancelButtonText: 'Batal'
-    });
-    if (!ok.isConfirmed) return;
-
+    submittingRef.current = true;
     setSubmitting(true);
     try {
+      const ok = await Swal.fire({
+        title: 'Konfirmasi Retur',
+        text: 'Yakin ingin menyimpan retur untuk transaksi ini?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, simpan',
+        cancelButtonText: 'Batal'
+      });
+      if (!ok.isConfirmed) return;
+
       // build payload: list of detail id and retur quantities
       const payload = {
         details: transaksi.details.map(d => ({
@@ -149,6 +152,7 @@ export default function ReturMasuk() {
       console.error(err);
       toast.error(getErrorMessage(err, 'Gagal menyimpan retur.'));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

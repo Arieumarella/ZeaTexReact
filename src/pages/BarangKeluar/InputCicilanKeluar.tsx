@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import PageBreadcrumb from '../../components/common/PageBreadCrumTreLevel';
@@ -37,6 +37,8 @@ export default function InputCicilanKeluar() {
   const [transaksi, setTransaksi] = useState<TransaksiDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Array<{ id: number; jml_bayar: number }>>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     const fetchTransaksi = async () => {
@@ -67,6 +69,7 @@ export default function InputCicilanKeluar() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
 
     // Validasi
     if (!id) {
@@ -87,23 +90,37 @@ export default function InputCicilanKeluar() {
       }))
     };
 
-    const result = await updateBerjangkaKeluar(parseInt(id), payload);
-    console.log('Result from service:', result);
-    if (result && result.status) {
-      // Tambah delay agar toast terbaca dengan baik
-      toast.success(result.message || 'Cicilan berhasil disimpan!', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setTimeout(() => {
-        navigate('/barang-keluar');
-      }, 1400);
-    } else {
-      console.error('Update failed or returned null');
+    submittingRef.current = true;
+    setSubmitting(true);
+    let success = false;
+    try {
+      const result = await updateBerjangkaKeluar(parseInt(id), payload);
+      console.log('Result from service:', result);
+      if (result && result.status) {
+        success = true;
+        // Tambah delay agar toast terbaca dengan baik
+        toast.success(result.message || 'Cicilan berhasil disimpan!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setTimeout(() => {
+          navigate('/barang-keluar');
+        }, 1400);
+      } else {
+        console.error('Update failed or returned null');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal menyimpan cicilan.');
+    } finally {
+      if (!success) {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
     }
   };
 
@@ -206,12 +223,13 @@ export default function InputCicilanKeluar() {
             <div className="pt-6 border-t flex justify-end gap-3">
               <button
                 type="submit"
-                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
+                disabled={submitting}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Simpan Cicilan
+                {submitting ? 'Menyimpan...' : 'Simpan Cicilan'}
               </button>
               <button
                 type="button"
